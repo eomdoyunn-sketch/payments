@@ -1,0 +1,53 @@
+---
+alwaysApply: true
+description: "프로젝트 전반적인 구조와 성격에 대한 개요"
+---
+
+# Block 프로젝트 개요
+
+## 프로젝트 성격
+이 프로젝트는 **Next.js 15.5.6** 기반의 현대적인 웹 애플리케이션입니다. React 19.1.0과 TypeScript를 사용하여 구축되었으며, 최신 웹 개발 트렌드를 반영한 기술 스택을 채택하고 있습니다.
+
+## 기술 스택
+- **프레임워크**: Next.js 15.5.6 (App Router 사용)
+- **언어**: TypeScript 5
+- **UI 라이브러리**: React 19.1.0
+- **스타일링**: Tailwind CSS 4 (최신 버전)
+- **UI 컴포넌트**: shadcn/ui (New York 스타일)
+- **아이콘**: Lucide React
+- **폰트**: Geist Sans & Geist Mono (Vercel 폰트)
+- **빌드 도구**: Turbopack (개발 및 빌드 시)
+
+## 프로젝트 구조
+```
+src/
+├── app/                 # Next.js App Router 구조
+│   ├── layout.tsx      # 루트 레이아웃 (Geist 폰트 설정)
+│   ├── page.tsx        # 홈페이지 (기본 Next.js 템플릿)
+│   └── globals.css     # 전역 스타일
+└── lib/
+    └── utils.ts        # 유틸리티 함수 (cn 함수 등)
+```
+
+## 주요 특징
+1. **최신 기술 스택**: Next.js 15, React 19, Tailwind CSS 4 등 최신 버전 사용
+2. **shadcn/ui 통합**: [components.json](mdc:components.json)에서 설정된 UI 컴포넌트 시스템
+3. **TypeScript 완전 지원**: 타입 안전성을 위한 완전한 TypeScript 설정
+4. **Turbopack 사용**: 빠른 개발 경험을 위한 Next.js의 새로운 번들러
+5. **반응형 디자인**: Tailwind CSS를 통한 모바일 우선 반응형 디자인
+
+## 개발 환경
+- **개발 서버**: `npm run dev --turbopack`
+- **빌드**: `npm run build --turbopack`
+- **린팅**: ESLint 9 사용
+- **패키지 매니저**: npm
+
+## 현재 상태
+프로젝트는 현재 기본 Next.js 템플릿 상태로, [src/app/page.tsx](mdc:src/app/page.tsx)에서 시작 페이지를 확인할 수 있습니다. shadcn/ui가 설정되어 있어 UI 컴포넌트 개발에 최적화된 환경이 구축되어 있습니다.
+
+## 개발 가이드라인
+- TypeScript를 사용하여 타입 안전성 확보
+- Tailwind CSS 클래스를 통한 스타일링
+- shadcn/ui 컴포넌트 활용
+- App Router 패턴 준수
+- 반응형 디자인 우선 고려
