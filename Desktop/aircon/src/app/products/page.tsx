@@ -5,6 +5,8 @@ import { Header } from '@/components/common/Header'
 import { Footer } from '@/components/common/Footer'
 import { ProductCard } from '@/components/common/ProductCard'
 import { SearchBar } from '@/components/common/SearchBar'
+import { FilterModal } from '@/components/common/FilterModal'
+import { ProductComparison } from '@/components/common/ProductComparison'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -16,7 +18,8 @@ import {
   List, 
   ChevronDown,
   X,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Scale
 } from 'lucide-react'
 import { BRANDS, CAPACITIES, ENERGY_GRADES, FEATURES, SORT_OPTIONS, SAMPLE_PRODUCTS } from '@/lib/constants'
 
@@ -26,10 +29,10 @@ export default function ProductsPage() {
   const [selectedCapacities, setSelectedCapacities] = useState<string[]>([])
   const [selectedEnergyGrades, setSelectedEnergyGrades] = useState<string[]>([])
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([])
-  const [priceRange, setPriceRange] = useState([0, 5000000])
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000])
   const [sortBy, setSortBy] = useState('popular')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [showFilters, setShowFilters] = useState(false)
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([])
 
   const filteredProducts = SAMPLE_PRODUCTS.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -42,7 +45,7 @@ export default function ProductsPage() {
     const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1]
     
     const matchesFeatures = selectedFeatures.length === 0 || 
-      selectedFeatures.every(feature => product.features.includes(feature))
+      selectedFeatures.every(feature => product.features.some(f => f === feature))
 
     return matchesSearch && matchesBrand && matchesCapacity && 
            matchesEnergyGrade && matchesPrice && matchesFeatures
@@ -58,8 +61,6 @@ export default function ProductsPage() {
         return b.rating - a.rating
       case 'newest':
         return b.id.localeCompare(a.id)
-      case 'discount':
-        return (b.discountRate || 0) - (a.discountRate || 0)
       default:
         return 0
     }
@@ -74,37 +75,16 @@ export default function ProductsPage() {
     setSearchQuery('')
   }
 
-  const toggleFilter = (type: string, value: string) => {
-    switch (type) {
-      case 'brand':
-        setSelectedBrands(prev => 
-          prev.includes(value) 
-            ? prev.filter(b => b !== value)
-            : [...prev, value]
-        )
-        break
-      case 'capacity':
-        setSelectedCapacities(prev => 
-          prev.includes(value) 
-            ? prev.filter(c => c !== value)
-            : [...prev, value]
-        )
-        break
-      case 'energyGrade':
-        setSelectedEnergyGrades(prev => 
-          prev.includes(value) 
-            ? prev.filter(e => e !== value)
-            : [...prev, value]
-        )
-        break
-      case 'feature':
-        setSelectedFeatures(prev => 
-          prev.includes(value) 
-            ? prev.filter(f => f !== value)
-            : [...prev, value]
-        )
-        break
+  const toggleProductComparison = (productId: string) => {
+    if (selectedProducts.includes(productId)) {
+      setSelectedProducts(selectedProducts.filter(id => id !== productId))
+    } else if (selectedProducts.length < 4) {
+      setSelectedProducts([...selectedProducts, productId])
     }
+  }
+
+  const clearComparison = () => {
+    setSelectedProducts([])
   }
 
   return (
@@ -117,212 +97,133 @@ export default function ProductsPage() {
           <p className="text-gray-600 mt-2">원하는 조건에 맞는 에어컨을 찾아보세요</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* 필터 사이드바 */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-4">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold">필터</h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                    className="text-sm"
-                  >
-                    전체 해제
-                  </Button>
-                </div>
+        {/* 검색 및 필터 */}
+        <div className="mb-8">
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="상품명, 브랜드 검색"
+          />
+        </div>
 
-                {/* 검색 */}
-                <div className="mb-6">
-                  <SearchBar
-                    value={searchQuery}
-                    onChange={setSearchQuery}
-                    placeholder="상품명, 브랜드 검색"
-                  />
-                </div>
+        {/* 필터 및 정렬 바 */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-8">
+          <div className="flex gap-2 flex-wrap">
+            <FilterModal
+              selectedBrands={selectedBrands}
+              selectedCapacities={selectedCapacities}
+              selectedEnergyGrades={selectedEnergyGrades}
+              selectedFeatures={selectedFeatures}
+              priceRange={priceRange}
+              onBrandsChange={setSelectedBrands}
+              onCapacitiesChange={setSelectedCapacities}
+              onEnergyGradesChange={setSelectedEnergyGrades}
+              onFeaturesChange={setSelectedFeatures}
+              onPriceRangeChange={setPriceRange}
+              onApplyFilters={() => {}}
+              onClearFilters={clearFilters}
+            />
+            
+            <ProductComparison
+              selectedProducts={selectedProducts}
+              onToggleProduct={toggleProductComparison}
+              onClearComparison={clearComparison}
+            />
 
-                {/* 브랜드 필터 */}
-                <div className="mb-6">
-                  <h3 className="font-medium mb-3">브랜드</h3>
-                  <div className="space-y-2">
-                    {BRANDS.map((brand) => (
-                      <label key={brand.id} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedBrands.includes(brand.name)}
-                          onChange={() => toggleFilter('brand', brand.name)}
-                          className="w-4 h-4 text-primary"
-                        />
-                        <span className="ml-2 text-sm">{brand.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 용량 필터 */}
-                <div className="mb-6">
-                  <h3 className="font-medium mb-3">용량</h3>
-                  <div className="space-y-2">
-                    {CAPACITIES.map((capacity) => (
-                      <label key={capacity.id} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedCapacities.includes(capacity.name)}
-                          onChange={() => toggleFilter('capacity', capacity.name)}
-                          className="w-4 h-4 text-primary"
-                        />
-                        <span className="ml-2 text-sm">{capacity.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 에너지등급 필터 */}
-                <div className="mb-6">
-                  <h3 className="font-medium mb-3">에너지등급</h3>
-                  <div className="space-y-2">
-                    {ENERGY_GRADES.map((grade) => (
-                      <label key={grade.id} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedEnergyGrades.includes(grade.name)}
-                          onChange={() => toggleFilter('energyGrade', grade.name)}
-                          className="w-4 h-4 text-primary"
-                        />
-                        <span className="ml-2 text-sm">{grade.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 기능 필터 */}
-                <div className="mb-6">
-                  <h3 className="font-medium mb-3">주요 기능</h3>
-                  <div className="space-y-2">
-                    {FEATURES.map((feature) => (
-                      <label key={feature.id} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedFeatures.includes(feature.name)}
-                          onChange={() => toggleFilter('feature', feature.name)}
-                          className="w-4 h-4 text-primary"
-                        />
-                        <span className="ml-2 text-sm">{feature.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 가격 범위 */}
-                <div className="mb-6">
-                  <h3 className="font-medium mb-3">가격 범위</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        placeholder="최소가"
-                        value={priceRange[0]}
-                        onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-                        className="text-sm"
-                      />
-                      <span className="text-sm text-gray-500">~</span>
-                      <Input
-                        type="number"
-                        placeholder="최대가"
-                        value={priceRange[1]}
-                        onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                        className="text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* 상품 목록 */}
-          <div className="lg:col-span-3">
-            {/* 상단 컨트롤 */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="lg:hidden"
-                >
-                  <Filter className="w-4 h-4 mr-2" />
-                  필터
-                </Button>
-                
-                <div className="text-sm text-gray-600">
-                  총 {filteredProducts.length}개 상품
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                {/* 정렬 */}
-                <div className="flex items-center gap-2">
-                  <SortAsc className="w-4 h-4" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  >
-                    {SORT_OPTIONS.map((option) => (
-                      <option key={option.id} value={option.value}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 보기 모드 */}
-                <div className="flex items-center gap-1 border border-gray-300 rounded-md">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
+            {/* 정렬 옵션 */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">정렬:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="border rounded px-3 py-1 text-sm"
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.value}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* 상품 그리드 */}
-            {sortedProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-gray-500 mb-4">검색 결과가 없습니다</div>
-                <Button variant="outline" onClick={clearFilters}>
-                  필터 초기화
-                </Button>
-              </div>
-            ) : (
-              <div className={`grid gap-6 ${
-                viewMode === 'grid' 
-                  ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
-                  : 'grid-cols-1'
-              }`}>
-                {sortedProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    variant={viewMode === 'list' ? 'detailed' : 'default'}
-                    className={viewMode === 'list' ? 'flex-row' : ''}
-                  />
-                ))}
-              </div>
-            )}
+            {/* 뷰 모드 */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
+        </div>
+
+        {/* 결과 카운트 */}
+        <div className="mb-6">
+          <p className="text-gray-600">
+            총 <span className="font-semibold">{sortedProducts.length}</span>개의 상품이 있습니다.
+          </p>
+        </div>
+
+        {/* 상품 목록 */}
+        <div className="mb-8">
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {sortedProducts.map((product) => (
+                <div key={product.id} className="relative">
+                  <ProductCard product={product} />
+                  <div className="absolute top-2 left-2">
+                    <Button
+                      variant={selectedProducts.includes(product.id) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => toggleProductComparison(product.id)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Scale className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {sortedProducts.map((product) => (
+                <div key={product.id} className="relative">
+                  <ProductCard product={product} />
+                  <div className="absolute top-2 left-2">
+                    <Button
+                      variant={selectedProducts.includes(product.id) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => toggleProductComparison(product.id)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Scale className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 결과 없음 */}
+          {sortedProducts.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-gray-500 mb-4">
+                검색 조건에 맞는 상품이 없습니다.
+              </div>
+              <Button onClick={clearFilters} variant="outline">
+                필터 초기화
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

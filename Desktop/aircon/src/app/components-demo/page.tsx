@@ -5,6 +5,12 @@ import { Header } from '@/components/common/Header'
 import { Footer } from '@/components/common/Footer'
 import { ProductCard } from '@/components/common/ProductCard'
 import { SearchBar } from '@/components/common/SearchBar'
+import { HeroCarousel } from '@/components/common/HeroCarousel'
+import { FilterModal } from '@/components/common/FilterModal'
+import { ProductComparison } from '@/components/common/ProductComparison'
+import { ImageGallery } from '@/components/common/ImageGallery'
+import { Spinner } from '@/components/ui/spinner'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -42,9 +48,41 @@ import {
   Code,
   Palette,
   Layout,
-  Component
+  Component,
+  Scale
 } from 'lucide-react'
 import { BRANDS, CAPACITIES, ENERGY_GRADES, FEATURES, SORT_OPTIONS, SAMPLE_PRODUCTS } from '@/lib/constants'
+
+// 캐러셀 데모 데이터
+const carouselDemoData = [
+  {
+    id: '1',
+    title: '여름 특가! 최대 30% 할인',
+    subtitle: '인기 에어컨 모델 특가 판매',
+    image: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
+    buttonText: '특가 상품 보기',
+    buttonLink: '/products?filter=discount',
+    backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+  },
+  {
+    id: '2',
+    title: '무료 설치 서비스',
+    subtitle: '전문 설치팀이 안전하게 설치해드립니다',
+    image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
+    buttonText: '설치 문의하기',
+    buttonLink: '/installation',
+    backgroundColor: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+  },
+  {
+    id: '3',
+    title: '신제품 출시',
+    subtitle: '최신 기술이 적용된 스마트 에어컨',
+    image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
+    buttonText: '신제품 보기',
+    buttonLink: '/products?filter=new',
+    backgroundColor: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+  }
+]
 
 export default function ComponentsDemoPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -52,12 +90,23 @@ export default function ComponentsDemoPage() {
   const [selectedCapacities, setSelectedCapacities] = useState<string[]>([])
   const [selectedEnergyGrades, setSelectedEnergyGrades] = useState<string[]>([])
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([])
-  const [priceRange, setPriceRange] = useState([0, 5000000])
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000])
   const [sortBy, setSortBy] = useState('popular')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showFilters, setShowFilters] = useState(false)
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+  
+  const { toast } = useToast()
 
   const demoProduct = SAMPLE_PRODUCTS[0]
+
+  const toggleProductComparison = (productId: string) => {
+    if (selectedProducts.includes(productId)) {
+      setSelectedProducts(selectedProducts.filter(id => id !== productId))
+    } else if (selectedProducts.length < 4) {
+      setSelectedProducts([...selectedProducts, productId])
+    }
+  }
 
   const toggleFilter = (type: string, value: string) => {
     switch (type) {
@@ -114,7 +163,7 @@ export default function ComponentsDemoPage() {
         </div>
 
         <Tabs defaultValue="common" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="common" className="flex items-center gap-2">
               <Component className="w-4 h-4" />
               공통 컴포넌트
@@ -123,6 +172,10 @@ export default function ComponentsDemoPage() {
               <Layout className="w-4 h-4" />
               UI 컴포넌트
             </TabsTrigger>
+            <TabsTrigger value="carousel" className="flex items-center gap-2">
+              <ChevronLeft className="w-4 h-4" />
+              캐러셀
+            </TabsTrigger>
             <TabsTrigger value="product" className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
               상품 관련
@@ -130,6 +183,10 @@ export default function ComponentsDemoPage() {
             <TabsTrigger value="interactive" className="flex items-center gap-2">
               <Code className="w-4 h-4" />
               인터랙티브
+            </TabsTrigger>
+            <TabsTrigger value="phase1" className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Phase 1 신기능
             </TabsTrigger>
           </TabsList>
 
@@ -362,6 +419,63 @@ export default function ComponentsDemoPage() {
                   <div className="mt-4 text-sm text-gray-600">
                     <p><strong>구성:</strong> Tabs, TabsList, TabsTrigger, TabsContent</p>
                     <p><strong>사용:</strong> 상품 상세 정보, 필터링, 네비게이션</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* 캐러셀 컴포넌트 데모 */}
+          <TabsContent value="carousel" className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">캐러셀 컴포넌트</h2>
+              
+              {/* HeroCarousel 컴포넌트 */}
+              <Card className="mb-8">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ChevronLeft className="w-5 h-5" />
+                    HeroCarousel 컴포넌트
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-gray-600">
+                      메인 히어로 섹션에서 사용되는 캐러셀 컴포넌트입니다. 
+                      자동 슬라이드, 네비게이션 화살표, 도트 인디케이터를 지원합니다.
+                    </p>
+                    
+                    <div className="border rounded-lg p-4 bg-gray-50">
+                      <h4 className="font-semibold mb-2">기본 캐러셀</h4>
+                      <HeroCarousel 
+                        items={carouselDemoData}
+                        autoPlay={true}
+                        autoPlayInterval={5000}
+                        showDots={true}
+                        showArrows={true}
+                      />
+                    </div>
+
+                    <div className="border rounded-lg p-4 bg-gray-50">
+                      <h4 className="font-semibold mb-2">자동 슬라이드 비활성화</h4>
+                      <HeroCarousel 
+                        items={carouselDemoData.slice(0, 3)}
+                        autoPlay={false}
+                        showDots={true}
+                        showArrows={true}
+                      />
+                    </div>
+
+                    <div className="border rounded-lg p-4 bg-gray-50">
+                      <h4 className="font-semibold mb-2">화살표 없음</h4>
+                      <HeroCarousel 
+                        items={carouselDemoData.slice(0, 2)}
+                        autoPlay={true}
+                        autoPlayInterval={3000}
+                        showDots={true}
+                        showArrows={false}
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -772,6 +886,222 @@ export default function ComponentsDemoPage() {
                   <div className="mt-4 text-sm text-gray-600">
                     <p><strong>기능:</strong> 상세 정보, 리뷰, Q&A, 배송 정보 탭</p>
                     <p><strong>사용 위치:</strong> 상품 상세 페이지</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Phase 1 신기능 데모 */}
+          <TabsContent value="phase1" className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Phase 1 신기능</h2>
+              <p className="text-gray-600 mb-8">
+                Phase 1에서 새로 구현된 고급 기능들을 확인하고 테스트할 수 있습니다.
+              </p>
+            </div>
+
+            {/* FilterModal 데모 */}
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <SlidersHorizontal className="w-5 h-5" />
+                    FilterModal - 고급 필터링
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      복잡한 필터 옵션들을 모달로 분리하여 사용성을 향상시킨 컴포넌트입니다.
+                    </p>
+                    <FilterModal
+                      selectedBrands={selectedBrands}
+                      selectedCapacities={selectedCapacities}
+                      selectedEnergyGrades={selectedEnergyGrades}
+                      selectedFeatures={selectedFeatures}
+                      priceRange={priceRange}
+                      onBrandsChange={setSelectedBrands}
+                      onCapacitiesChange={setSelectedCapacities}
+                      onEnergyGradesChange={setSelectedEnergyGrades}
+                      onFeaturesChange={setSelectedFeatures}
+                      onPriceRangeChange={setPriceRange}
+                      onApplyFilters={() => {}}
+                      onClearFilters={() => {
+                        setSelectedBrands([])
+                        setSelectedCapacities([])
+                        setSelectedEnergyGrades([])
+                        setSelectedFeatures([])
+                        setPriceRange([0, 5000000])
+                      }}
+                    />
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p><strong>기능:</strong> 브랜드, 용량, 에너지등급, 기능별 필터링, 가격 범위</p>
+                      <p><strong>사용 위치:</strong> 상품 목록 페이지</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* ProductComparison 데모 */}
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Scale className="w-5 h-5" />
+                    ProductComparison - 상품 비교
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      최대 4개 상품까지 비교할 수 있는 기능입니다. 하단에 고정 표시되며 비교 페이지로 이동할 수 있습니다.
+                    </p>
+                    <div className="space-y-4">
+                      <div className="flex gap-2 flex-wrap">
+                        {SAMPLE_PRODUCTS.slice(0, 4).map((product) => (
+                          <Button
+                            key={product.id}
+                            variant={selectedProducts.includes(product.id) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleProductComparison(product.id)}
+                          >
+                            {product.name}
+                          </Button>
+                        ))}
+                      </div>
+                      <ProductComparison
+                        selectedProducts={selectedProducts}
+                        onToggleProduct={toggleProductComparison}
+                        onClearComparison={() => setSelectedProducts([])}
+                      />
+                    </div>
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p><strong>기능:</strong> 상품 선택, 비교 테이블, 비교 페이지 이동</p>
+                      <p><strong>사용 위치:</strong> 상품 목록, 상품 상세 페이지</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* ImageGallery 데모 */}
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="w-5 h-5" />
+                    ImageGallery - 이미지 갤러리
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      줌 기능과 썸네일 네비게이션이 포함된 고급 이미지 갤러리입니다.
+                    </p>
+                    <div className="max-w-md">
+                      <ImageGallery
+                        images={[
+                          '/api/placeholder/400/400',
+                          '/api/placeholder/400/400',
+                          '/api/placeholder/400/400',
+                          '/api/placeholder/400/400'
+                        ]}
+                        productName="데모 상품"
+                      />
+                    </div>
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p><strong>기능:</strong> 이미지 줌, 썸네일 네비게이션, 터치 지원</p>
+                      <p><strong>사용 위치:</strong> 상품 상세 페이지</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Spinner 데모 */}
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    Spinner - 로딩 스피너
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      다양한 크기의 로딩 스피너 컴포넌트입니다.
+                    </p>
+                    <div className="flex items-center gap-6">
+                      <div className="text-center">
+                        <Spinner size="sm" />
+                        <p className="text-xs text-gray-500 mt-2">Small</p>
+                      </div>
+                      <div className="text-center">
+                        <Spinner size="md" />
+                        <p className="text-xs text-gray-500 mt-2">Medium</p>
+                      </div>
+                      <div className="text-center">
+                        <Spinner size="lg" />
+                        <p className="text-xs text-gray-500 mt-2">Large</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p><strong>기능:</strong> 다양한 크기, 커스텀 색상</p>
+                      <p><strong>사용 위치:</strong> 로딩 상태 표시</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Toast 데모 */}
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5" />
+                    Toast - 알림 시스템
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      사용자 액션에 대한 즉각적인 피드백을 제공하는 알림 시스템입니다.
+                    </p>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button onClick={() => {
+                        toast({
+                          title: "성공!",
+                          description: "작업이 성공적으로 완료되었습니다."
+                        })
+                      }}>
+                        성공 토스트
+                      </Button>
+                      <Button variant="outline" onClick={() => {
+                        toast({
+                          title: "에러 발생",
+                          description: "문제가 발생했습니다. 다시 시도해주세요.",
+                          variant: "destructive"
+                        })
+                      }}>
+                        에러 토스트
+                      </Button>
+                      <Button variant="secondary" onClick={() => {
+                        toast({
+                          title: "정보",
+                          description: "새로운 기능이 추가되었습니다.",
+                        })
+                      }}>
+                        기본 토스트
+                      </Button>
+                    </div>
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p><strong>기능:</strong> 성공, 에러, 정보 타입별 스타일링</p>
+                      <p><strong>사용 위치:</strong> 전역 알림 시스템</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

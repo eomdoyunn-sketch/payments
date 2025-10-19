@@ -10,23 +10,25 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { ENERGY_GRADES } from '@/lib/constants'
 
 interface Product {
-  id: string
-  name: string
-  brand: string
-  model: string
-  capacity: string
-  type: string
-  price: number
-  originalPrice?: number
-  discountRate?: number
-  rating: number
-  reviewCount: number
-  image: string
-  features: string[]
-  energyGrade: string
-  stock: 'in-stock' | 'low-stock' | 'out-of-stock'
-  delivery: string
-  installation: string
+  readonly id: string
+  readonly name: string
+  readonly brand: string
+  readonly model: string
+  readonly capacity: string
+  readonly type: string
+  readonly price: number
+  readonly originalPrice?: number
+  readonly discountRate?: number
+  readonly rating: number
+  readonly reviewCount: number
+  readonly image: string
+  readonly features: readonly string[]
+  readonly energyGrade: string
+  readonly stock: 'in-stock' | 'low-stock' | 'out-of-stock'
+  readonly delivery: string
+  readonly installation: string
+  readonly color?: string
+  readonly description?: string
 }
 
 interface ProductCardProps {
@@ -91,8 +93,8 @@ export function ProductCard({
   }
 
   return (
-    <Card className={`group hover:shadow-lg transition-all duration-300 ${className}`}>
-      <div className="relative">
+    <Card className={`group hover:shadow-lg transition-all duration-300 flex flex-col h-full ${className}`}>
+      <div className="relative flex flex-col h-full">
         {/* 상품 이미지 */}
         <Link href={`/products/${id}`}>
           <div className="relative aspect-square overflow-hidden rounded-t-xl">
@@ -127,94 +129,96 @@ export function ProductCard({
           </div>
         </Link>
 
-        <CardContent className="p-4">
-          {/* 브랜드 */}
-          <div className="text-sm text-gray-500 mb-1">{brand}</div>
-          
-          {/* 상품명과 할인 정보 */}
-          <div className="mb-2">
-            <Link href={`/products/${id}`}>
-              <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                {name}
-              </h3>
-            </Link>
-            {/* 할인 정보를 상품명 아래로 이동 */}
-            {discountRate && discountRate > 0 && (
-              <div className="mt-1">
-                <Badge variant="destructive" className="text-xs">
-                  {discountRate}% 할인
-                </Badge>
-              </div>
-            )}
-          </div>
-
-          {/* 모델명 및 용량 */}
-          <div className="text-sm text-gray-600 mb-2">
-            {model} • {capacity}kW • {type}
-          </div>
-
-          {/* 주요 기능 */}
-          {features.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
-              {features.slice(0, 3).map((feature, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
-                  {feature}
-                </Badge>
-              ))}
-              {features.length > 3 && (
-                <Badge variant="outline" className="text-xs">
-                  +{features.length - 3}
-                </Badge>
+        <CardContent className="p-4 flex-1 flex flex-col">
+          <div className="flex-1">
+            {/* 브랜드 */}
+            <div className="text-sm text-gray-500 mb-1">{brand}</div>
+            
+            {/* 상품명과 할인 정보 */}
+            <div className="mb-2">
+              <Link href={`/products/${id}`}>
+                <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                  {name}
+                </h3>
+              </Link>
+              {/* 할인 정보를 상품명 아래로 이동 */}
+              {discountRate && discountRate > 0 && (
+                <div className="mt-1">
+                  <Badge variant="destructive" className="text-xs">
+                    {discountRate}% 할인
+                  </Badge>
+                </div>
               )}
             </div>
-          )}
 
-          {/* 에너지등급 */}
-          {energyGradeInfo && (
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-medium">에너지 {energyGradeInfo.name}</span>
+            {/* 모델명 및 용량 */}
+            <div className="text-sm text-gray-600 mb-2">
+              {model} • {capacity}kW • {type}
             </div>
-          )}
 
-          {/* 평점 */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center">
-              {renderStars(rating)}
-            </div>
-            <span className="text-sm text-gray-600">
-              {rating.toFixed(1)} ({reviewCount.toLocaleString()})
-            </span>
-          </div>
-
-          {/* 가격 정보 */}
-          <div className="mb-3">
-            {originalPrice && originalPrice > price && (
-              <div className="text-sm text-gray-500 line-through">
-                {formatPrice(originalPrice)}원
+            {/* 주요 기능 */}
+            {features.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-3">
+                {features.slice(0, 3).map((feature, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {feature}
+                  </Badge>
+                ))}
+                {features.length > 3 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{features.length - 3}
+                  </Badge>
+                )}
               </div>
             )}
-            <div className="text-2xl font-bold text-primary">
-              {formatPrice(price)}원
-            </div>
-          </div>
 
-          {/* 배송 및 설치 정보 */}
-          <div className="space-y-1 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
-              <Truck className="w-4 h-4" />
-              <span>{delivery}</span>
+            {/* 에너지등급 */}
+            {energyGradeInfo && (
+              <div className="flex items-center gap-2 mb-3">
+                <Zap className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-medium">에너지 {energyGradeInfo.name}</span>
+              </div>
+            )}
+
+            {/* 평점 */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center">
+                {renderStars(rating)}
+              </div>
+              <span className="text-sm text-gray-600">
+                {rating.toFixed(1)} ({reviewCount.toLocaleString()})
+              </span>
             </div>
-            <div className="flex items-center gap-1">
-              <Wrench className="w-4 h-4" />
-              <span>{installation}</span>
+
+            {/* 가격 정보 */}
+            <div className="mb-3">
+              {originalPrice && originalPrice > price && (
+                <div className="text-sm text-gray-500 line-through">
+                  {formatPrice(originalPrice)}원
+                </div>
+              )}
+              <div className="text-2xl font-bold text-primary">
+                {formatPrice(price)}원
+              </div>
+            </div>
+
+            {/* 배송 및 설치 정보 */}
+            <div className="space-y-1 text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <Truck className="w-4 h-4" />
+                <span>{delivery}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Wrench className="w-4 h-4" />
+                <span>{installation}</span>
+              </div>
             </div>
           </div>
         </CardContent>
 
         {/* 액션 버튼 */}
         {showActions && (
-          <CardFooter className="p-4 pt-0">
+          <CardFooter className="p-4 pt-0 mt-auto">
             <div className="flex gap-2 w-full">
               <Button
                 variant="outline"

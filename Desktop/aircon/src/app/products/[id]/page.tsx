@@ -1,9 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, use } from 'react'
 import { Header } from '@/components/common/Header'
 import { Footer } from '@/components/common/Footer'
 import { ProductCard } from '@/components/common/ProductCard'
+import { ImageGallery } from '@/components/common/ImageGallery'
+import { ProductComparison } from '@/components/common/ProductComparison'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,23 +30,26 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  Scale
 } from 'lucide-react'
 import { SAMPLE_PRODUCTS } from '@/lib/constants'
 import Link from 'next/link'
 
 interface ProductDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
+  const resolvedParams = use(params)
+  const product = SAMPLE_PRODUCTS.find(p => p.id === resolvedParams.id)
+  
   const [selectedColor, setSelectedColor] = useState('화이트')
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState('specs')
-
-  const product = SAMPLE_PRODUCTS.find(p => p.id === params.id)
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([resolvedParams.id])
   
   if (!product) {
     return (
@@ -76,6 +81,18 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     ))
   }
 
+  const toggleProductComparison = (productId: string) => {
+    if (selectedProducts.includes(productId)) {
+      setSelectedProducts(selectedProducts.filter(id => id !== productId))
+    } else if (selectedProducts.length < 4) {
+      setSelectedProducts([...selectedProducts, productId])
+    }
+  }
+
+  const clearComparison = () => {
+    setSelectedProducts([])
+  }
+
   const relatedProducts = SAMPLE_PRODUCTS
     .filter(p => p.id !== product.id && p.brand === product.brand)
     .slice(0, 3)
@@ -95,25 +112,10 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* 상품 이미지 */}
           <div className="space-y-4">
-            <div className="aspect-square bg-white rounded-lg overflow-hidden">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 gap-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="aspect-square bg-white rounded-lg overflow-hidden">
-                  <img
-                    src={product.image}
-                    alt={`${product.name} ${i}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
+            <ImageGallery 
+              images={[product.image, product.image, product.image, product.image]} 
+              productName={product.name}
+            />
           </div>
 
           {/* 상품 정보 */}
@@ -233,9 +235,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 <Share2 className="w-4 h-4 mr-2" />
                 공유하기
               </Button>
-              <Button variant="outline" className="flex-1">
-                비교하기
-              </Button>
+              <ProductComparison
+                selectedProducts={selectedProducts}
+                onToggleProduct={toggleProductComparison}
+                onClearComparison={clearComparison}
+              />
             </div>
           </div>
         </div>
@@ -383,10 +387,21 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">관련 상품</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedProducts.map((relatedProduct) => (
-                <ProductCard
-                  key={relatedProduct.id}
-                  product={relatedProduct}
-                />
+                <div key={relatedProduct.id} className="relative">
+                  <ProductCard
+                    product={relatedProduct}
+                  />
+                  <div className="absolute top-2 left-2">
+                    <Button
+                      variant={selectedProducts.includes(relatedProduct.id) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => toggleProductComparison(relatedProduct.id)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Scale className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
