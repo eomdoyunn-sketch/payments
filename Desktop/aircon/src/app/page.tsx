@@ -1,103 +1,221 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import React from 'react'
+import { Header } from '@/components/common/Header'
+import { Footer } from '@/components/common/Footer'
+import { ProductCard } from '@/components/common/ProductCard'
+import { SearchBar } from '@/components/common/SearchBar'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
+import { 
+  Star, 
+  Truck, 
+  Wrench, 
+  Zap, 
+  Shield, 
+  Gift, 
+  TrendingUp,
+  Smartphone,
+  Wind,
+  Flame
+} from 'lucide-react'
+import { BRANDS, PRODUCT_TYPES, CAPACITIES, ENERGY_GRADES, SAMPLE_PRODUCTS } from '@/lib/constants'
+
+// 임시 상품 데이터
+const mockProducts = SAMPLE_PRODUCTS
+
+const bannerData = [
+  {
+    id: '1',
+    title: '여름 특가! 최대 30% 할인',
+    subtitle: '인기 에어컨 모델 특가 판매',
+    image: '/images/banners/summer-sale.jpg',
+    buttonText: '특가 상품 보기',
+    buttonLink: '/products?filter=discount',
+  },
+  {
+    id: '2',
+    title: '무료 설치 서비스',
+    subtitle: '전문 설치팀이 안전하게 설치해드립니다',
+    image: '/images/banners/free-installation.jpg',
+    buttonText: '설치 문의하기',
+    buttonLink: '/installation',
+  },
+  {
+    id: '3',
+    title: '신제품 출시',
+    subtitle: '최신 기술이 적용된 스마트 에어컨',
+    image: '/images/banners/new-products.jpg',
+    buttonText: '신제품 보기',
+    buttonLink: '/products?filter=new',
+  },
+]
+
+export default function HomePage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      
+      <main>
+        {/* 메인 배너 */}
+        <section className="relative">
+          <div className="h-96 bg-gradient-to-r from-blue-600 to-cyan-600 flex items-center justify-center">
+            <div className="text-center text-white">
+              <h1 className="text-4xl font-bold mb-4">AirZone</h1>
+              <p className="text-xl mb-8">최고의 에어컨을 찾아보세요</p>
+              <SearchBar className="max-w-md mx-auto" />
+            </div>
+          </div>
+        </section>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+        {/* 브랜드 네비게이션 */}
+        <section className="py-8 bg-white">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl font-bold text-center mb-8">인기 브랜드</h2>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {BRANDS.map((brand) => (
+                <Card key={brand.id} className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardContent className="p-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
+                      <span className="text-lg font-bold text-primary">{brand.name.charAt(0)}</span>
+                    </div>
+                    <h3 className="font-medium">{brand.name}</h3>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 오늘의 특가 */}
+        <section className="py-12 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold">오늘의 특가</h2>
+              <Button variant="outline">더 보기</Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {mockProducts.slice(0, 4).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 인기 상품 */}
+        <section className="py-12 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold">인기 상품</h2>
+              <Button variant="outline">더 보기</Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {mockProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 카테고리별 상품 */}
+        <section className="py-12 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-8">용량별 추천</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {CAPACITIES.map((capacity) => (
+                <Card key={capacity.id} className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardContent className="p-6">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                      <Wind className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">{capacity.name}</h3>
+                    <p className="text-gray-600 mb-4">{capacity.description}</p>
+                    <Button variant="outline" size="sm">상품 보기</Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 서비스 특징 */}
+        <section className="py-12 bg-white">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-8">AirZone만의 특별한 서비스</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <Truck className="w-8 h-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">무료 배송</h3>
+                <p className="text-gray-600">전국 무료 배송으로 빠르고 안전하게</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <Wrench className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">무료 설치</h3>
+                <p className="text-gray-600">전문 설치팀이 안전하게 설치해드립니다</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-purple-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <Shield className="w-8 h-8 text-purple-600" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">A/S 보장</h3>
+                <p className="text-gray-600">3년 무상 A/S로 안심하고 사용하세요</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-orange-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <Gift className="w-8 h-8 text-orange-600" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">특별 혜택</h3>
+                <p className="text-gray-600">회원만의 특별한 할인과 혜택</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 에너지 효율 정보 */}
+        <section className="py-12 bg-green-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-4">친환경 에너지 효율</h2>
+              <p className="text-lg text-gray-600">1등급 에너지 효율로 전기요금을 절약하세요</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {ENERGY_GRADES.map((grade) => (
+                <Card key={grade.id} className="text-center">
+                  <CardContent className="p-6">
+                    <div className={`w-16 h-16 ${grade.bgColor} rounded-full mx-auto mb-4 flex items-center justify-center`}>
+                      <Zap className={`w-8 h-8 ${grade.color}`} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">{grade.name}</h3>
+                    <p className="text-gray-600">최고의 에너지 효율</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 신제품 섹션 */}
+        <section className="py-12 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold">신제품</h2>
+              <Button variant="outline">더 보기</Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {mockProducts.slice(0, 4).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      <Footer />
     </div>
-  );
+  )
 }

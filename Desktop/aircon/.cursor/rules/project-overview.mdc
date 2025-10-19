@@ -13,6 +13,14 @@ description: "aircon 프로젝트 전반적인 분석 및 구조 가이드"
 - **스타일링**: Tailwind CSS v4
 - **UI 라이브러리**: shadcn/ui (New York 스타일)
 
+## 필수 기억 요소
+- **컴포넌트를 만들 땐 항상 Shadcn MCP를 사용해줘.**
+- **UI를 만들 때 테마를 하드코딩 하지 말고 공통 테마를 사용해줘.**
+- **컴포넌트를 만들고 나면 /components-demo 페이지에 데모 디스플레이 해줘.**
+- **페이지를 만들 때는 꼭 공통 컴포넌트를 사용하도록 해줘.**
+- **공통 컴포넌트는 prompts/components/ 폴더에 정의되어 있으니 참고해줘.**
+
+
 ## 기술 스택 분석
 
 ### 핵심 의존성
@@ -40,7 +48,10 @@ src/
 │   └── favicon.ico        # 파비콘
 ├── lib/                   # 유틸리티 함수
 │   └── utils.ts           # 공통 유틸리티
-└── components/            # 컴포넌트 (shadcn/ui)
+├── components/            # 컴포넌트 (shadcn/ui)
+└── prompts/               # PRD 및 컴포넌트 정의
+    ├── components/        # 공통 컴포넌트 정의
+    └── *.md              # 페이지별 PRD
 ```
 
 ### 설정 파일
@@ -82,6 +93,8 @@ src/
 - `src/components/` 디렉토리에 컴포넌트 생성
 - shadcn/ui 컴포넌트 확장 시 `src/components/ui/` 사용
 - 재사용 가능한 유틸리티는 `src/lib/`에 배치
+- **공통 컴포넌트는 prompts/components/ 폴더에 정의하고 페이지 개발 시 반드시 사용**
+- **새로운 컴포넌트 개발 시 기존 공통 컴포넌트를 먼저 확인하고 재사용 우선**
 
 ### 스타일링
 - Tailwind CSS 클래스 우선 사용
@@ -93,6 +106,19 @@ src/
 - shadcn/ui 설정 완료
 - TypeScript 및 Tailwind CSS 설정 완료
 - 개발 환경 준비 완료
+
+## 공통 컴포넌트 사용 규칙
+
+### 필수 규칙
+1. **페이지 개발 시 prompts/components/ 폴더의 공통 컴포넌트를 먼저 확인**
+2. **기존 공통 컴포넌트로 구현 가능한 경우 반드시 재사용**
+3. **새로운 컴포넌트가 필요한 경우 prompts/components/에 정의 후 사용**
+4. **공통 컴포넌트 수정 시 모든 페이지에 영향 검토**
+
+### 컴포넌트 우선순위
+1. **prompts/components/ 공통 컴포넌트** (최우선)
+2. **shadcn/ui 기본 컴포넌트**
+3. **새로 개발하는 커스텀 컴포넌트**
 
 ## 다음 단계 권장사항
 1. 프로젝트 목적에 맞는 페이지 구조 설계
