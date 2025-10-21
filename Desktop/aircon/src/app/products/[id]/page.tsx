@@ -6,6 +6,8 @@ import { Footer } from '@/components/common/Footer'
 import { ProductCard } from '@/components/common/ProductCard'
 import { ImageGallery } from '@/components/common/ImageGallery'
 import { ProductComparison } from '@/components/common/ProductComparison'
+import { InstallCostBlock } from '@/components/common/InstallCostBlock'
+import { InstallOptionsSelector } from '@/components/common/InstallOptionsSelector'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -50,6 +52,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState('specs')
   const [selectedProducts, setSelectedProducts] = useState<string[]>([resolvedParams.id])
+  const [selectedInstallOption, setSelectedInstallOption] = useState<'standard' | 'none' | 'premium'>('standard')
   
   if (!product) {
     return (
@@ -109,21 +112,22 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          {/* 상품 이미지 */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-12">
+          {/* 상품 이미지 - 좌측 1/3 */}
+          <div className="xl:col-span-1">
             <ImageGallery 
               images={[product.image, product.image, product.image, product.image]} 
               productName={product.name}
             />
           </div>
 
-          {/* 상품 정보 */}
-          <div className="space-y-6">
-            <div>
+          {/* 상품 정보 - 우측 2/3 */}
+          <div className="xl:col-span-2 space-y-6">
+            {/* 상품 기본 정보 */}
+            <div className="bg-white p-6 rounded-lg border">
               <div className="text-sm text-gray-500 mb-2">{product.brand}</div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{product.name}</h1>
-              <div className="flex items-center gap-4 mb-4">
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">{product.name}</h1>
+              <div className="flex items-center gap-4 mb-6">
                 <div className="flex items-center">
                   {renderStars(product.rating)}
                   <span className="ml-2 text-sm text-gray-600">
@@ -131,34 +135,55 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   </span>
                 </div>
               </div>
+
+              {/* 가격 정보 */}
+              <div className="space-y-3">
+                {product.originalPrice && (
+                  <div className="text-lg text-gray-500 line-through">
+                    {formatPrice(product.originalPrice)}원
+                  </div>
+                )}
+                <div className="flex items-center gap-4">
+                  <div className="text-3xl font-bold text-primary">
+                    {formatPrice(product.price)}원
+                  </div>
+                  {product.discountRate && (
+                    <Badge variant="destructive" className="text-lg px-3 py-1">
+                      {product.discountRate}% 할인
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-sm text-gray-600">
+                  월 {formatPrice(Math.floor(product.price / 12))}원 (12개월 할부)
+                </div>
+              </div>
             </div>
 
-            {/* 가격 정보 */}
-            <div className="space-y-2">
-              {product.originalPrice && (
-                <div className="text-lg text-gray-500 line-through">
-                  {formatPrice(product.originalPrice)}원
+            {/* 배송/설치 정보 */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h3 className="font-semibold text-blue-900 mb-3">배송/설치 정보</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-blue-600" />
+                  <span>{product.delivery}</span>
                 </div>
-              )}
-              <div className="flex items-center gap-4">
-                <div className="text-3xl font-bold text-primary">
-                  {formatPrice(product.price)}원
+                <div className="flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-blue-600" />
+                  <span>{product.installation}</span>
                 </div>
-                {product.discountRate && (
-                  <Badge variant="destructive" className="text-lg px-3 py-1">
-                    {product.discountRate}% 할인
-                  </Badge>
-                )}
-              </div>
-              <div className="text-sm text-gray-600">
-                월 {formatPrice(Math.floor(product.price / 12))}원 (12개월 할부)
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-blue-600" />
+                  <span>1년 무상 보증</span>
+                </div>
               </div>
             </div>
 
             {/* 옵션 선택 */}
-            <div className="space-y-4">
+            <div className="bg-white p-6 rounded-lg border space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900">옵션 선택</h3>
+              
               <div>
-                <h3 className="font-medium mb-2">색상</h3>
+                <h4 className="font-medium mb-3">색상</h4>
                 <div className="flex gap-2">
                   {['화이트', '베이지', '실버', '블랙'].map((color) => (
                     <Button
@@ -166,6 +191,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       variant={selectedColor === color ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setSelectedColor(color)}
+                      className="min-w-[80px]"
                     >
                       {color}
                     </Button>
@@ -174,12 +200,13 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               </div>
 
               <div>
-                <h3 className="font-medium mb-2">수량</h3>
-                <div className="flex items-center gap-2">
+                <h4 className="font-medium mb-3">수량</h4>
+                <div className="flex items-center gap-3">
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
                   >
                     -
                   </Button>
@@ -187,7 +214,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     type="number"
                     value={quantity}
                     onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-                    className="w-16 text-center"
+                    className="w-20 text-center"
                     min="1"
                     max="5"
                   />
@@ -195,6 +222,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     variant="outline"
                     size="icon"
                     onClick={() => setQuantity(Math.min(5, quantity + 1))}
+                    disabled={quantity >= 5}
                   >
                     +
                   </Button>
@@ -202,44 +230,38 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               </div>
             </div>
 
-            {/* 배송/설치 정보 */}
-            <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Truck className="w-5 h-5 text-blue-600" />
-                <span className="font-medium">{product.delivery}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Wrench className="w-5 h-5 text-blue-600" />
-                <span className="font-medium">{product.installation}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-blue-600" />
-                <span className="font-medium">1년 무상 보증</span>
-              </div>
+            {/* 설치 옵션 선택 */}
+            <div className="bg-white p-6 rounded-lg border">
+              <InstallOptionsSelector
+                selectedOption={selectedInstallOption}
+                onOptionChange={setSelectedInstallOption}
+              />
             </div>
 
             {/* 구매 버튼 */}
-            <div className="flex gap-4">
-              <Button variant="outline" size="lg" className="flex-1">
-                <Heart className="w-4 h-4 mr-2" />
-                관심상품
-              </Button>
-              <Button size="lg" className="flex-1">
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                장바구니 담기
-              </Button>
-            </div>
-
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1">
-                <Share2 className="w-4 h-4 mr-2" />
-                공유하기
-              </Button>
-              <ProductComparison
-                selectedProducts={selectedProducts}
-                onToggleProduct={toggleProductComparison}
-                onClearComparison={clearComparison}
-              />
+            <div className="bg-white p-6 rounded-lg border">
+              <div className="flex gap-4 mb-4">
+                <Button variant="outline" size="lg" className="flex-1">
+                  <Heart className="w-4 h-4 mr-2" />
+                  관심상품
+                </Button>
+                <Button size="lg" className="flex-1 bg-primary hover:bg-primary/90">
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  장바구니 담기
+                </Button>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  공유하기
+                </Button>
+                <ProductComparison
+                  selectedProducts={selectedProducts}
+                  onToggleProduct={toggleProductComparison}
+                  onClearComparison={clearComparison}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -247,7 +269,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         {/* 상세 정보 탭 */}
         <div className="mb-12">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-4 max-w-4xl mx-auto">
               <TabsTrigger value="specs">상세 스펙</TabsTrigger>
               <TabsTrigger value="reviews">리뷰</TabsTrigger>
               <TabsTrigger value="qna">Q&A</TabsTrigger>
@@ -255,11 +277,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             </TabsList>
 
             <TabsContent value="specs" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>상세 스펙</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
+              <div className="max-w-6xl mx-auto">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>상세 스펙</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <h3 className="font-semibold mb-3">기본 정보</h3>
@@ -319,71 +342,81 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="reviews" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>고객 리뷰</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <div className="text-gray-500 mb-4">리뷰가 아직 없습니다</div>
-                    <Button variant="outline">첫 리뷰 작성하기</Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="max-w-6xl mx-auto">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>고객 리뷰</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <div className="text-gray-500 mb-4">리뷰가 아직 없습니다</div>
+                      <Button variant="outline">첫 리뷰 작성하기</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="qna" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Q&A</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <div className="text-gray-500 mb-4">문의가 아직 없습니다</div>
-                    <Button variant="outline">문의하기</Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="max-w-6xl mx-auto">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Q&A</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <div className="text-gray-500 mb-4">문의가 아직 없습니다</div>
+                      <Button variant="outline">문의하기</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="shipping" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>배송/교환 안내</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">배송 안내</h3>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• 전국 무료 배송 (30만원 이상 구매 시)</li>
-                      <li>• 일반 배송: 3-5일 소요</li>
-                      <li>• 당일 배송: 추가 비용 1만원</li>
-                      <li>• 설치 서비스 포함</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">교환/반품 안내</h3>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• 7일 이내 무료 교환/반품</li>
-                      <li>• 설치 완료 후 7일 이내</li>
-                      <li>• 상품 하자 시 무료 교환</li>
-                      <li>• 고객 변심 시 배송비 고객 부담</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="max-w-6xl mx-auto space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>배송/교환 안내</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold mb-2">배송 안내</h3>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• 전국 무료 배송 (30만원 이상 구매 시)</li>
+                        <li>• 일반 배송: 3-5일 소요</li>
+                        <li>• 당일 배송: 추가 비용 1만원</li>
+                        <li>• 설치 서비스 포함</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-2">교환/반품 안내</h3>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• 7일 이내 무료 교환/반품</li>
+                        <li>• 설치 완료 후 7일 이내</li>
+                        <li>• 상품 하자 시 무료 교환</li>
+                        <li>• 고객 변심 시 배송비 고객 부담</li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 설치비/추가비 고지 블록 */}
+                <InstallCostBlock />
+              </div>
             </TabsContent>
           </Tabs>
         </div>
 
         {/* 관련 상품 */}
         {relatedProducts.length > 0 && (
-          <div>
+          <div className="max-w-6xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">관련 상품</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedProducts.map((relatedProduct) => (

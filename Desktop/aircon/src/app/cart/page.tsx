@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Header } from '@/components/common/Header'
 import { Footer } from '@/components/common/Footer'
+import { InstallOptionsSelector } from '@/components/common/InstallOptionsSelector'
 
 interface CartItem {
   id: string
@@ -68,6 +69,7 @@ export default function CartPage() {
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [couponCode, setCouponCode] = useState('')
   const [points, setPoints] = useState(0)
+  const [selectedInstallOption, setSelectedInstallOption] = useState<'standard' | 'none' | 'premium'>('standard')
 
   const updateQuantity = (id: string, newQuantity: number) => {
     if (newQuantity < 1 || newQuantity > 5) return
@@ -256,6 +258,17 @@ export default function CartPage() {
                 <CardTitle className="text-xl">주문 요약</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* 설치 옵션 선택 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    설치 옵션
+                  </label>
+                  <InstallOptionsSelector
+                    selectedOption={selectedInstallOption}
+                    onOptionChange={setSelectedInstallOption}
+                  />
+                </div>
+
                 {/* 쿠폰 적용 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

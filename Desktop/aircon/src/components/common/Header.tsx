@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Search, ShoppingCart, User, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,13 +37,18 @@ export function Header({
   return (
     <header className={`${headerClasses[variant]} ${className}`}>
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           {/* 로고 */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">AZ</span>
+          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-xl">AZ</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold text-gray-900">AirZone</span>
+                <span className="text-xs text-gray-500 -mt-1">에어컨 전문몰</span>
+              </div>
             </div>
-            <span className="text-xl font-bold text-primary">AirZone</span>
           </Link>
 
           {/* 데스크톱 네비게이션 */}

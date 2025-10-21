@@ -9,6 +9,9 @@ import { HeroCarousel } from '@/components/common/HeroCarousel'
 import { FilterModal } from '@/components/common/FilterModal'
 import { ProductComparison } from '@/components/common/ProductComparison'
 import { ImageGallery } from '@/components/common/ImageGallery'
+import { InstallCostBlock } from '@/components/common/InstallCostBlock'
+import { CategoryQuickAccess } from '@/components/common/CategoryQuickAccess'
+import { InstallOptionsSelector } from '@/components/common/InstallOptionsSelector'
 import { Spinner } from '@/components/ui/spinner'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
@@ -95,6 +98,7 @@ export default function ComponentsDemoPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showFilters, setShowFilters] = useState(false)
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+  const [selectedInstallOption, setSelectedInstallOption] = useState<'standard' | 'none' | 'premium'>('standard')
   
   const { toast } = useToast()
 
@@ -163,7 +167,7 @@ export default function ComponentsDemoPage() {
         </div>
 
         <Tabs defaultValue="common" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="common" className="flex items-center gap-2">
               <Component className="w-4 h-4" />
               공통 컴포넌트
@@ -187,6 +191,10 @@ export default function ComponentsDemoPage() {
             <TabsTrigger value="phase1" className="flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
               Phase 1 신기능
+            </TabsTrigger>
+            <TabsTrigger value="new-components" className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              신규 컴포넌트
             </TabsTrigger>
           </TabsList>
 
@@ -1101,6 +1109,71 @@ export default function ComponentsDemoPage() {
                     <div className="mt-4 text-sm text-gray-600">
                       <p><strong>기능:</strong> 성공, 에러, 정보 타입별 스타일링</p>
                       <p><strong>사용 위치:</strong> 전역 알림 시스템</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* 새로운 컴포넌트들 */}
+          <TabsContent value="new-components" className="mt-6">
+            <div className="space-y-8">
+              {/* 설치비/추가비 고지 블록 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-amber-600" />
+                    InstallCostBlock
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <InstallCostBlock />
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p><strong>기능:</strong> 설치비/추가비용 법적 고지사항 표시</p>
+                      <p><strong>사용 위치:</strong> 상품 상세 페이지, 장바구니</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 카테고리 바로가기 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Layout className="w-5 h-5 text-blue-600" />
+                    CategoryQuickAccess
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <CategoryQuickAccess showDescription={true} />
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p><strong>기능:</strong> 주요 에어컨 카테고리로 빠른 이동</p>
+                      <p><strong>사용 위치:</strong> 홈페이지</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 설치 옵션 선택기 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wrench className="w-5 h-5 text-green-600" />
+                    InstallOptionsSelector
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <InstallOptionsSelector
+                      selectedOption={selectedInstallOption}
+                      onOptionChange={setSelectedInstallOption}
+                    />
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p><strong>기능:</strong> 표준설치/설치없음/프리미엄 설치 옵션 선택</p>
+                      <p><strong>사용 위치:</strong> 상품 상세 페이지, 장바구니</p>
                     </div>
                   </div>
                 </CardContent>
