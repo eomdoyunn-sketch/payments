@@ -1,0 +1,124 @@
+---
+alwaysApply: true
+description: "Gym29 Payments 프로젝트 전반적인 구조와 설정 분석"
+---
+
+# Gym29 Payments 프로젝트 개요
+
+## 프로젝트 정보
+- **프로젝트명**: gym29-payments
+- **버전**: 0.1.0
+- **프레임워크**: Next.js 15.5.4 (App Router)
+- **언어**: TypeScript 5
+- **스타일링**: Tailwind CSS v4
+- **UI 컴포넌트**: shadcn/ui (New York 스타일)
+
+## 필수 기억 요소
+
+- 컴포넌트를 만들 땐 항상 Shadcn MCP를 사용해줘.
+- UI를 만들 때 테마를 하드코어 하지 말고 공통 테마를 사용해줘.
+- 컴포넌트를 만들고 나면 /components-demo 페이지에 데모 디스플레이 해줘.
+- **src/components 폴더에 공통 컴포넌트들이 존재하므로, 페이지를 만들 때는 반드시 기존 공통 컴포넌트를 우선 사용해야 함.**
+- 새로운 컴포넌트가 필요한 경우에만 추가하고, 기존 컴포넌트로 해결 가능한 경우 재사용해야 함.
+
+
+## 기술 스택
+
+### 핵심 의존성
+- **Next.js 15.5.4**: React 기반 풀스택 프레임워크 (App Router 사용)
+- **React 19.1.0**: 최신 React 버전
+- **TypeScript 5**: 타입 안전성을 위한 정적 타입 언어
+- **Tailwind CSS v4**: 유틸리티 퍼스트 CSS 프레임워크
+
+### UI/UX 라이브러리
+- **shadcn/ui**: 재사용 가능한 UI 컴포넌트 라이브러리
+  - 설정 파일: [components.json](mdc:components.json)
+  - 스타일: New York
+  - 아이콘: Lucide React
+  - 기본 색상: neutral
+- **Lucide React**: 아이콘 라이브러리
+- **Class Variance Authority**: 컴포넌트 variant 관리
+- **Tailwind Merge**: Tailwind 클래스 병합 유틸리티
+
+### 폰트
+- **Geist Sans**: 기본 sans-serif 폰트
+- **Geist Mono**: 모노스페이스 폰트
+- 설정 위치: [src/app/layout.tsx](mdc:src/app/layout.tsx)
+
+## 프로젝트 구조
+
+### 주요 디렉토리
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── globals.css        # 전역 스타일 (Tailwind CSS)
+│   ├── layout.tsx         # 루트 레이아웃
+│   ├── page.tsx           # 홈페이지
+│   └── components-demo/   # 컴포넌트 데모 페이지
+├── components/             # 공통 컴포넌트
+│   ├── PaymentsCard.tsx   # 결제 카드 컴포넌트
+│   └── ui/                # shadcn/ui 컴포넌트들
+└── lib/
+    └── utils.ts           # 유틸리티 함수 (cn 함수)
+```
+
+### 설정 파일
+- [package.json](mdc:package.json): 프로젝트 의존성 및 스크립트
+- [tsconfig.json](mdc:tsconfig.json): TypeScript 설정
+- [next.config.ts](mdc:next.config.ts): Next.js 설정
+- [components.json](mdc:components.json): shadcn/ui 설정
+- [postcss.config.mjs](mdc:postcss.config.mjs): PostCSS 설정
+
+### 빌드 도구
+- **Turbopack**: Next.js 개발 서버 및 빌드 최적화
+- **ESLint**: 코드 품질 검사
+- **PostCSS**: CSS 처리
+
+## 개발 환경 설정
+
+### 스크립트 명령어
+```bash
+npm run dev      # Turbopack으로 개발 서버 실행
+npm run build    # Turbopack으로 프로덕션 빌드
+npm run start    # 프로덕션 서버 실행
+npm run lint     # ESLint 실행
+```
+
+### 경로 별칭 (Aliases)
+shadcn/ui 설정에 정의된 경로 별칭:
+- `@/components`: 컴포넌트 디렉토리
+- `@/lib/utils`: 유틸리티 함수
+- `@/components/ui`: UI 컴포넌트
+- `@/lib`: 라이브러리
+- `@/hooks`: 커스텀 훅
+
+## 현재 상태
+- 프로젝트는 초기 Next.js 템플릿 상태
+- shadcn/ui 컴포넌트들이 설정되어 있고 UI 컴포넌트들이 추가됨
+- PaymentsCard 컴포넌트가 구현되어 결제 카드 기능 제공
+- components-demo 페이지에서 모든 컴포넌트 데모 확인 가능
+- 기본 Next.js 랜딩 페이지가 표시됨
+
+## 권장 개발 방향
+1. **UI 컴포넌트 추가**: shadcn/ui를 활용한 결제 관련 컴포넌트 개발
+2. **결제 시스템 통합**: Stripe, PayPal 등 결제 게이트웨이 연동
+3. **상태 관리**: React 상태 관리 (Context API 또는 Zustand)
+4. **데이터베이스**: 결제 정보 저장을 위한 데이터베이스 연동
+5. **인증 시스템**: 사용자 인증 및 권한 관리
+6. **테스팅**: Jest, React Testing Library를 활용한 테스트 코드 작성
+
+## 코딩 컨벤션
+- TypeScript 사용 필수
+- Tailwind CSS로 스타일링
+- shadcn/ui 컴포넌트 우선 사용
+- App Router 패턴 준수
+- ESLint 규칙 준수
+
+## 컴포넌트 사용 규칙
+1. **기존 컴포넌트 우선 사용**: src/components 폴더의 기존 컴포넌트들을 먼저 확인하고 재사용
+2. **PaymentsCard 컴포넌트**: 결제 관련 기능이 필요한 경우 PaymentsCard 컴포넌트 활용
+3. **shadcn/ui 컴포넌트**: src/components/ui 폴더의 기본 UI 컴포넌트들 활용
+4. **새 컴포넌트 생성**: 기존 컴포넌트로 해결할 수 없는 경우에만 새 컴포넌트 생성
+5. **데모 페이지 업데이트**: 새 컴포넌트 생성 시 /components-demo 페이지에 데모 추가 필수
+
+6. 결제 연동 시, 사용자 경험과 시스템 안정성을 기준으로 가장 효율적이며 오류 발생률이 낮은 UI 패턴과 로직 방식을 우선 적용한다.
