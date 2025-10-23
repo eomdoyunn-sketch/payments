@@ -7,9 +7,12 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ouucwiaylephariimyrq.supabase.co'
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91dWN3aWF5bGVwaGFyaWlteXJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwOTIxODksImV4cCI6MjA3NjY2ODE4OX0.NaxXIzvO01nrAQWYjl9uAdqK_Xod-mdCGdOVOLNcNTY'
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {

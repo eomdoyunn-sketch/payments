@@ -9,6 +9,11 @@ import { clearAuthTokens } from '@/lib/auth-utils'
 export async function login(formData: FormData) {
   const supabase = await createClient()
 
+  if (!supabase) {
+    console.error('❌ Supabase 클라이언트 생성 실패')
+    return { error: '인증 서비스에 연결할 수 없습니다.' }
+  }
+
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
@@ -52,6 +57,11 @@ export async function login(formData: FormData) {
 // 회원가입 액션
 export async function signup(formData: FormData) {
   const supabase = await createClient()
+
+  if (!supabase) {
+    console.error('❌ Supabase 클라이언트 생성 실패')
+    return { error: '인증 서비스에 연결할 수 없습니다.' }
+  }
 
   const name = formData.get('name') as string
   const email = formData.get('email') as string
@@ -136,6 +146,13 @@ export async function logout() {
     
     // 클라이언트 사이드에서도 로컬 스토리지 정리
     clearAuthTokens()
+    
+    if (!supabase) {
+      console.error('❌ Supabase 클라이언트 생성 실패')
+      revalidatePath('/', 'layout')
+      redirect('/login')
+      return
+    }
     
     await supabase.auth.signOut()
     revalidatePath('/', 'layout')

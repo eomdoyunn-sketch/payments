@@ -2,13 +2,13 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function createClient() {
-  const cookieStore = await cookies()
-
-  // Supabase 프로젝트 설정 (gym29-payments) - 하드코딩된 값 사용
-  const supabaseUrl = 'https://pgcmozwsjzsbroayfcny.supabase.co'
-  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnY21vendzanpzYnJvYXlmY255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxMTE5ODQsImV4cCI6MjA3NTY4Nzk4NH0.ONAJxgp93e5gqIzQWhte2_E1IRXAgoLY_ieBnXuUhTU'
+  // Supabase 설정 - 환경변수 또는 하드코딩된 값 사용
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ouucwiaylephariimyrq.supabase.co'
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91dWN3aWF5bGVwaGFyaWlteXJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwOTIxODksImV4cCI6MjA3NjY2ODE4OX0.NaxXIzvO01nrAQWYjl9uAdqK_Xod-mdCGdOVOLNcNTY'
 
   console.log('🔧 Supabase 서버 클라이언트 설정:', { supabaseUrl, hasAnonKey: !!supabaseAnonKey })
+
+  const cookieStore = await cookies()
 
   return createServerClient(
     supabaseUrl,

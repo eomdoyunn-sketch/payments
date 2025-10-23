@@ -20,6 +20,7 @@ import { AgreementModal, AgreementList, Agreement } from "@/components/common/Ag
 import { AGREEMENTS, getAgreementByType } from "@/lib/agreements"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useSettings } from "@/contexts/SettingsContext"
+import AuthStatus from "@/components/AuthStatus"
 
 // 데모 사용자
 const demoUser = {
@@ -843,6 +844,37 @@ export default function ComponentsDemoPage() {
               <li>• <strong>동의서 관리:</strong> 필수 2종 + 선택 1종, 버전 로그 가능</li>
               <li>• <strong>상태 표시:</strong> 여유/임박/마감 상태 실시간 반영</li>
             </ul>
+          </div>
+        </section>
+
+        {/* 인증 상태 데모 */}
+        <section className="space-y-8">
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl font-bold">Supabase 인증 상태 데모</h2>
+            <p className="text-muted-foreground text-lg">
+              Supabase SSR을 사용한 실시간 인증 상태 확인 컴포넌트입니다.
+            </p>
+          </div>
+
+          <div className="flex justify-center">
+            <AuthStatus />
+          </div>
+
+          <div className="max-w-2xl mx-auto p-6 bg-muted/30 rounded-lg space-y-4">
+            <h4 className="font-semibold text-lg">✨ Supabase SSR 인증 기능</h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>• <strong>실시간 인증 상태:</strong> Supabase 클라이언트를 통한 실시간 인증 상태 확인</li>
+              <li>• <strong>사용자 정보 표시:</strong> 이름, 이메일, 사번, 계열사, 역할 정보 표시</li>
+              <li>• <strong>자동 로그아웃:</strong> 토큰 만료 시 자동 로그아웃 처리</li>
+              <li>• <strong>SSR 지원:</strong> 서버사이드 렌더링과 클라이언트사이드 상태 동기화</li>
+              <li>• <strong>미들웨어 연동:</strong> Next.js 미들웨어를 통한 자동 인증 처리</li>
+              <li>• <strong>환경변수 지원:</strong> .env.local 파일을 통한 Supabase 설정</li>
+            </ul>
+            <div className="pt-4 border-t">
+              <p className="text-sm text-muted-foreground">
+                💡 실제 로그인/회원가입은 <code className="px-1 py-0.5 bg-background rounded">/login</code>, <code className="px-1 py-0.5 bg-background rounded">/signup</code> 페이지에서 가능합니다.
+              </p>
+            </div>
           </div>
         </section>
 
