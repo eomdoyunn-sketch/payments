@@ -71,21 +71,24 @@ export default function PaymentSuccessPage() {
             errorData,
             paymentKey: paymentKey?.substring(0, 10) + '...',
             orderId,
-            amount
+            amount,
+            responseHeaders: Object.fromEntries(response.headers.entries())
           })
           
           // 더 구체적인 오류 메시지 제공
           let errorMessage = errorData.error || errorData.message || `결제 승인에 실패했습니다. (${response.status})`
           
-          // 환경 변수 관련 오류인 경우 특별 처리
+          // 토스페이먼츠 특정 오류 처리
           if (errorMessage.includes('시크릿 키가 설정되지 않았습니다')) {
             errorMessage = '결제 시스템 설정에 문제가 있습니다. 관리자에게 문의해주세요.'
           } else if (errorMessage.includes('토스페이먼츠 인증에 실패')) {
             errorMessage = '결제 시스템 인증에 문제가 있습니다. 잠시 후 다시 시도해주세요.'
-          } else if (errorMessage.includes('이미 처리된 결제')) {
+          } else if (errorMessage.includes('이미 처리된 결제') || errorMessage.includes('ALREADY_PROCESSED_PAYMENT')) {
             errorMessage = '이미 처리된 결제입니다. 결제 내역을 확인해주세요.'
-          } else if (errorMessage.includes('ALREADY_PROCESSED_PAYMENT')) {
-            errorMessage = '이미 처리된 결제입니다. 결제 내역을 확인해주세요.'
+          } else if (errorMessage.includes('카드 결제가 거절되었습니다')) {
+            errorMessage = '카드 결제가 거절되었습니다. 다른 카드로 시도하거나 카드사에 문의해주세요.'
+          } else if (errorMessage.includes('잔액이 부족합니다')) {
+            errorMessage = '카드 잔액이 부족합니다. 다른 결제 수단을 이용해주세요.'
           } else if (errorMessage.includes('payment_date') && errorMessage.includes('null value')) {
             errorMessage = '결제 데이터 저장 중 오류가 발생했습니다. 관리자에게 문의해주세요.'
           } else if (response.status === 401) {

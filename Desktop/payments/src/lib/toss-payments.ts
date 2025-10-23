@@ -224,6 +224,10 @@ export async function confirmTossPayment(
   // 환경 변수 검증
   if (!secretKey || secretKey === '') {
     console.error('토스페이먼츠 시크릿 키가 설정되지 않았습니다.')
+    console.error('환경 변수 확인:', {
+      TOSS_SECRET_KEY: process.env.TOSS_SECRET_KEY ? '설정됨' : '설정되지 않음',
+      NODE_ENV: process.env.NODE_ENV
+    })
     throw new Error('토스페이먼츠 시크릿 키가 설정되지 않았습니다. 환경 변수 TOSS_SECRET_KEY를 확인해주세요.')
   }
   
@@ -267,11 +271,24 @@ export async function confirmTossPayment(
       errorData,
       paymentKey: paymentKey.substring(0, 10) + '...',
       orderId,
-      amount
+      amount,
+      responseHeaders: Object.fromEntries(response.headers.entries())
     })
     
-    // 더 구체적인 오류 메시지 제공
-    if (response.status === 401) {
+    // 토스페이먼츠 특정 오류 코드 처리
+    if (errorData.code === 'UNAUTHORIZED') {
+      throw new Error('토스페이먼츠 인증에 실패했습니다. 시크릿 키를 확인해주세요.')
+    } else if (errorData.code === 'INVALID_REQUEST') {
+      throw new Error(`토스페이먼츠 요청 오류: ${errorData.message || '잘못된 요청입니다.'}`)
+    } else if (errorData.code === 'NOT_FOUND') {
+      throw new Error('결제 정보를 찾을 수 없습니다. 결제 키를 확인해주세요.')
+    } else if (errorData.code === 'ALREADY_PROCESSED_PAYMENT') {
+      throw new Error('이미 처리된 결제입니다.')
+    } else if (errorData.code === 'REJECT_CARD_PAYMENT') {
+      throw new Error('카드 결제가 거절되었습니다. 카드사에 문의해주세요.')
+    } else if (errorData.code === 'INSUFFICIENT_BALANCE') {
+      throw new Error('잔액이 부족합니다.')
+    } else if (response.status === 401) {
       throw new Error('토스페이먼츠 인증에 실패했습니다. 시크릿 키를 확인해주세요.')
     } else if (response.status === 400) {
       throw new Error(`토스페이먼츠 요청 오류: ${errorData.message || '잘못된 요청입니다.'}`)

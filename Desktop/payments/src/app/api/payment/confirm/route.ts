@@ -84,17 +84,22 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. 전역 설정 가져오기
-    const { data: settings } = await supabase
+    const { data: settings, error: settingsError } = await supabase
       .from('global_settings')
       .select('*')
       .single()
 
+    if (settingsError) {
+      console.error('전역 설정 조회 실패:', settingsError)
+      // 기본값 사용
+    }
+
     // 5. 이용기간 계산
-    const membershipStartDate = settings?.membershipStartDate || '2025-01-01'
+    const membershipStartDate = settings?.membership_start_date || '2025-01-01'
     const membershipPeriod = paymentInfo?.membershipPeriod || 3
     const membershipEndDate = calculateEndDate(membershipStartDate, membershipPeriod)
     
-    const lockerStartDate = settings?.lockerStartDate || '2025-01-01'
+    const lockerStartDate = settings?.locker_start_date || '2025-01-01'
     const lockerPeriod = paymentInfo?.lockerPeriod || 0
     const lockerEndDate = paymentInfo?.hasLocker ? calculateEndDate(lockerStartDate, lockerPeriod) : null
 
@@ -102,6 +107,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from('payments')
       .insert({
+        payment_date: new Date().toISOString().split('T')[0], // 현재 날짜를 YYYY-MM-DD 형식으로 설정
         toss_payment_key: paymentKey,
         toss_order_id: orderId,
         price: amount,

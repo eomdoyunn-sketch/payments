@@ -24,6 +24,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar"
 import { AgreementModal, AgreementList, Agreement } from "@/components/common/AgreementModal"
 import { AGREEMENTS, getAgreementByType } from "@/lib/agreements"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { EnvironmentCheck } from "@/components/EnvironmentCheck"
 // useSettings import 제거 (SettingsProvider 의존성 제거)
 
 // 데모 사용자
@@ -2424,6 +2425,11 @@ export default function ComponentsDemoPage() {
               onRefresh={() => console.log("새로고침")}
               loading={false}
             />
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold mb-4">환경 변수 설정 확인</h2>
+            <EnvironmentCheck showDetails={true} />
           </div>
         </div>
       </div>
