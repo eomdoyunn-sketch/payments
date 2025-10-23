@@ -21,6 +21,12 @@ async function checkAuthentication() {
 // 전역 설정 조회 (모든 인증된 사용자 접근 가능)
 export async function getGlobalSettings(): Promise<GlobalSettings> {
   try {
+    // 개발 환경에서는 항상 기본값 사용
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📊 개발 환경: 기본값 사용:', DEFAULT_SETTINGS.membershipPrices)
+      return DEFAULT_SETTINGS
+    }
+
     // Supabase URL이 유효하지 않은 경우 기본값 반환
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -39,6 +45,10 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
     let supabase
     try {
       supabase = await createClient()
+      if (!supabase) {
+        console.log('📊 Supabase 클라이언트 없음, 기본값 사용')
+        return DEFAULT_SETTINGS
+      }
     } catch (clientError) {
       console.log('📊 Supabase 클라이언트 생성 실패, 기본값 사용:', clientError)
       return DEFAULT_SETTINGS

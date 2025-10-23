@@ -1,9 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+// 개발 환경에서 Supabase 연결 비활성화
+const isDevelopment = process.env.NODE_ENV === 'development'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+let supabase: any = null
+
+if (!isDevelopment) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  
+  if (supabaseUrl && supabaseAnonKey) {
+    supabase = createClient(supabaseUrl, supabaseAnonKey)
+  }
+}
+
+export { supabase }
 
 // 타입 정의
 export type Database = {
