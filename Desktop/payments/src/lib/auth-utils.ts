@@ -30,10 +30,10 @@ export function clearAuthTokens() {
 /**
  * Refresh token 오류인지 확인합니다.
  */
-export function isRefreshTokenError(error: any): boolean {
-  if (!error || !error.message) return false
+export function isRefreshTokenError(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('message' in error)) return false
   
-  const message = error.message.toLowerCase()
+  const message = (error as { message: string }).message.toLowerCase()
   return message.includes('refresh token not found') || 
          message.includes('invalid refresh token') ||
          message.includes('refresh token expired')
@@ -42,8 +42,11 @@ export function isRefreshTokenError(error: any): boolean {
 /**
  * 인증 오류를 안전하게 처리합니다.
  */
-export function handleAuthError(error: any): void {
-  console.warn('인증 오류 발생:', error.message)
+export function handleAuthError(error: unknown): void {
+  const errorMessage = error && typeof error === 'object' && 'message' in error 
+    ? (error as { message: string }).message 
+    : '알 수 없는 오류'
+  console.warn('인증 오류 발생:', errorMessage)
   
   if (isRefreshTokenError(error)) {
     console.log('Refresh token 오류로 인한 자동 로그아웃 처리')
@@ -59,8 +62,12 @@ export function handleAuthError(error: any): void {
 /**
  * Supabase 클라이언트가 유효한지 확인합니다.
  */
-export function isValidSupabaseClient(client: any): boolean {
-  return client && 
-         typeof client.auth === 'object' && 
-         typeof client.auth.getSession === 'function'
+export function isValidSupabaseClient(client: unknown): boolean {
+  return client !== null && 
+         typeof client === 'object' && 
+         client !== null &&
+         'auth' in client &&
+         typeof (client as { auth: unknown }).auth === 'object' && 
+         (client as { auth: { getSession?: unknown } }).auth !== null &&
+         typeof (client as { auth: { getSession: unknown } }).auth.getSession === 'function'
 }

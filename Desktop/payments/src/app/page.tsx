@@ -32,7 +32,15 @@ export default async function Home() {
   
   console.log('🏠 서버에서 전역 설정 전달:', {
     membershipPrices: globalSettings.membershipPrices,
-    hasGlobalSettings: !!globalSettings
+    hasGlobalSettings: !!globalSettings,
+    isLoggedIn,
+    userEmail: user?.email,
+    eligibility: eligibility ? {
+      eligible: eligibility.eligible,
+      reason: eligibility.reason,
+      hasCompany: !!eligibility.company,
+      hasUserInfo: !!eligibility.userInfo
+    } : null
   })
   
   return <HomeClient eligibility={eligibility} isLoggedIn={isLoggedIn} globalSettings={globalSettings} />

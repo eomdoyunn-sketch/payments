@@ -34,13 +34,24 @@ export async function checkPaymentOverlap(
       supabase = createClient()
     } catch (clientError) {
       console.error('Supabase 클라이언트 생성 실패:', clientError)
+      const errorMessage = clientError instanceof Error ? clientError.message : '알 수 없는 오류'
       return {
         hasOverlap: false,
         overlappingPayments: [],
-        message: '데이터베이스 연결에 실패했습니다. 잠시 후 다시 시도해주세요.'
+        message: `데이터베이스 연결에 실패했습니다: ${errorMessage}`
       }
     }
     
+    // employeeId 유효성 검증
+    if (!employeeId || employeeId.trim() === '') {
+      console.warn('employeeId가 유효하지 않습니다:', employeeId)
+      return {
+        hasOverlap: false,
+        overlappingPayments: [],
+        message: '사용자 정보가 올바르지 않습니다.'
+      }
+    }
+
     // 사용자의 기존 결제 내역 조회 (환불되지 않은 것만)
     const { data: existingPayments, error } = await supabase
       .from('payments')
@@ -51,11 +62,20 @@ export async function checkPaymentOverlap(
       .order('payment_date', { ascending: false })
 
     if (error) {
-      console.error('기존 결제 내역 조회 실패:', error)
+      // 에러 객체를 더 명확하게 로깅
+      console.warn('기존 결제 내역 조회 실패 (계속 진행):', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        employeeId
+      })
+      
+      // 에러가 있어도 겹침이 없다고 가정하고 결제 진행 가능하게 함
       return {
         hasOverlap: false,
         overlappingPayments: [],
-        message: '기존 결제 내역을 확인할 수 없습니다.'
+        message: '기존 결제 내역을 확인할 수 없습니다. 계속 진행합니다.'
       }
     }
 

@@ -170,6 +170,8 @@ export async function requestTossPayment(
     
     // 결제 요청
     console.log('💰 결제 요청 시도...')
+    // 결제위젯에서는 cardInstallmentPlan 파라미터를 지원하지 않음
+    // 할부 설정은 결제위젯 UI에서 자동으로 처리됨
     const result = await widgets.requestPayment({
       orderId: request.orderId,
       orderName: request.orderName,

@@ -7,17 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useTransition, useEffect } from "react";
-import { Eye, EyeOff, FileText, ExternalLink } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { signup } from "@/app/actions/auth";
 import { getActiveCompanies } from "@/app/actions/companies";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { AGREEMENTS } from "@/lib/agreements";
+import { AgreementModal } from "@/components/AgreementModal";
+import { useConsentAgreements } from "@/hooks/useConsentAgreements";
 
 type Company = {
   code: string;
@@ -34,6 +34,16 @@ export default function SignupPage() {
   const [companiesLoading, setCompaniesLoading] = useState(true);
   const [serviceAgreed, setServiceAgreed] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const { agreements: consentAgreements } = useConsentAgreements(["service", "privacy"]);
+  
+  const serviceAgreement = consentAgreements["service"];
+  const privacyAgreement = consentAgreements["privacy"];
+  const serviceLabelPrefix = serviceAgreement?.required === false ? "[선택]" : "[필수]";
+  const privacyLabelPrefix = privacyAgreement?.required === false ? "[선택]" : "[필수]";
+  const serviceContent =
+    serviceAgreement?.content || AGREEMENTS.find((a) => a.type === "service")?.content || "";
+  const privacyContent =
+    privacyAgreement?.content || AGREEMENTS.find((a) => a.type === "privacy")?.content || "";
   // 마케팅 동의는 회원가입 시 비활성화
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -297,83 +307,81 @@ export default function SignupPage() {
                 )}
               </div>
 
-              {/* 약관 동의 - SHP 구조 적용 */}
-              <div className="space-y-4 pt-2">
-                {/* 서비스 이용약관 (필수) */}
-                <div className="flex items-start space-x-2">
+              {/* 약관 동의 - 2개 항목만 */}
+              <div className="space-y-3 pt-2">
+                {/* 모두 동의 */}
+                <div className="flex items-center space-x-2">
                   <Checkbox 
-                    id="service"
-                    checked={serviceAgreed}
-                    onCheckedChange={(checked) => setServiceAgreed(checked as boolean)}
+                    id="allAgree"
+                    checked={serviceAgreed && privacyAgreed}
+                    onCheckedChange={(checked) => {
+                      setServiceAgreed(checked as boolean);
+                      setPrivacyAgreed(checked as boolean);
+                    }}
                     className="mt-1"
                   />
-                  <div className="flex-1">
-                    <label
-                      htmlFor="service"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-                    >
-                      <span className="text-foreground">GYM29 서비스 이용약관</span>
-                      <Badge variant="destructive" className="text-xs">필수</Badge>
-                    </label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                            <FileText className="h-3 w-3 mr-1" />
-                            약관보기
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>GYM29 서비스 이용약관</DialogTitle>
-                          </DialogHeader>
-                          <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                            {AGREEMENTS.find(a => a.type === 'service')?.content}
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </div>
+                  <label
+                    htmlFor="allAgree"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    모두 동의합니다.
+                  </label>
                 </div>
 
-                {/* 개인정보 수집·이용 동의서 (필수) */}
-                <div className="flex items-start space-x-2">
-                  <Checkbox 
-                    id="privacy"
-                    checked={privacyAgreed}
-                    onCheckedChange={(checked) => setPrivacyAgreed(checked as boolean)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <label
-                      htmlFor="privacy"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-                    >
-                      <span className="text-foreground">개인정보 수집·이용 동의서</span>
-                      <Badge variant="destructive" className="text-xs">필수</Badge>
-                    </label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                            <FileText className="h-3 w-3 mr-1" />
-                            약관보기
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>개인정보 수집·이용 동의서</DialogTitle>
-                          </DialogHeader>
-                          <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                            {AGREEMENTS.find(a => a.type === 'privacy')?.content}
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                {/* 개별 동의 항목들 - 2개만 */}
+                <div className="space-y-2">
+                  {/* 서비스 이용약관 (필수) */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="service"
+                        checked={serviceAgreed}
+                        onCheckedChange={(checked) => setServiceAgreed(checked as boolean)}
+                        className="mt-1"
+                      />
+                      <label
+                        htmlFor="service"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {`${serviceLabelPrefix} ${serviceAgreement?.title ?? "서비스 이용약관"}`}
+                      </label>
                     </div>
+                    <AgreementModal
+                      title={serviceAgreement?.title ?? "서비스 이용약관"}
+                      content={serviceContent}
+                    >
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-primary hover:text-primary">
+                        약관보기
+                      </Button>
+                    </AgreementModal>
+                  </div>
+
+                  {/* 개인정보 수집·이용 동의서 (필수) */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="privacy"
+                        checked={privacyAgreed}
+                        onCheckedChange={(checked) => setPrivacyAgreed(checked as boolean)}
+                        className="mt-1"
+                      />
+                      <label
+                        htmlFor="privacy"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {`${privacyLabelPrefix} ${privacyAgreement?.title ?? "개인정보 수집 및 이용 동의"}`}
+                      </label>
+                    </div>
+                    <AgreementModal
+                      title={privacyAgreement?.title ?? "개인정보 수집 및 이용 동의"}
+                      content={privacyContent}
+                    >
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-primary hover:text-primary">
+                        약관보기
+                      </Button>
+                    </AgreementModal>
                   </div>
                 </div>
-
-                {/* 마케팅 동의는 회원가입 시 비활성화 - 결제 시에도 동의서 없음 */}
               </div>
               
               {/* 회원가입 버튼 */}
@@ -401,7 +409,7 @@ export default function SignupPage() {
           </CardFooter>
         </Card>
       </div>
+
     </div>
   );
 }
-

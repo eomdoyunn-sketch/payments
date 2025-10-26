@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/common/StatusBadge"
 import { NoticeCard } from "@/components/common/NoticeCard"
 import { DataTable } from "@/components/admin/DataTable"
 import { PaymentDataTable } from "@/components/admin/PaymentDataTable"
+import { PaymentHistoryTable } from "@/components/admin/PaymentHistoryTable"
 import { PageHeader } from "@/components/common/PageHeader"
 import { ExcelUploadModal } from "@/components/admin/ExcelUploadModal"
 import { PaymentStatusTable } from "@/components/admin/PaymentStatusTable"
@@ -22,9 +23,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Link from "next/link"
 import { AdminSidebar } from "@/components/admin/AdminSidebar"
 import { AgreementModal, AgreementList, Agreement } from "@/components/common/AgreementModal"
+import { ExcelStyleAgreementManager } from "@/components/admin/ExcelStyleAgreementManager"
 import { AGREEMENTS, getAgreementByType } from "@/lib/agreements"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { EnvironmentCheck } from "@/components/EnvironmentCheck"
+import { PrivacyPolicyModal } from "@/components/PrivacyPolicyModal"
+import { TermsAgreement } from "@/components/TermsAgreement"
 // useSettings import 제거 (SettingsProvider 의존성 제거)
 
 // 데모 사용자
@@ -99,13 +103,13 @@ const demoCompanyExpired = {
   availableUntil: new Date("2025-09-30")
 }
 
-// 데모 상품 (전역 설정에서 가격 가져오기)
-const getDemoProducts = (settings: any) => [
+// 데모 상품 (기본 가격 사용)
+const getDemoProducts = (settings: any = null) => [
   {
     id: "full-day",
     name: "종일권",
     period: "3개월",
-    price: settings.membershipPrices.fullDay,
+    price: settings?.membershipPrices?.fullDay || 99000,
     remaining: 6,
     startDate: "2025-10-15",
     endDate: "2026-01-14"
@@ -114,7 +118,7 @@ const getDemoProducts = (settings: any) => [
     id: "morning",
     name: "오전권",
     period: "3개월",
-    price: settings.membershipPrices.morning,
+    price: settings?.membershipPrices?.morning || 66000,
     remaining: 4,
     startDate: "2025-10-15",
     endDate: "2026-01-14"
@@ -123,19 +127,19 @@ const getDemoProducts = (settings: any) => [
     id: "evening",
     name: "저녁권",
     period: "3개월",
-    price: settings.membershipPrices.evening,
+    price: settings?.membershipPrices?.evening || 33000,
     remaining: 2,
     startDate: "2025-10-15",
     endDate: "2026-01-14"
   }
 ]
 
-const getDemoProductsSoldOut = (settings: any) => [
+const getDemoProductsSoldOut = (settings: any = null) => [
   {
     id: "full-day",
     name: "종일권",
     period: "3개월",
-    price: settings.membershipPrices.fullDay,
+    price: settings?.membershipPrices?.fullDay || 99000,
     remaining: 0,
     startDate: "2025-10-15",
     endDate: "2026-01-14"
@@ -144,7 +148,7 @@ const getDemoProductsSoldOut = (settings: any) => [
     id: "morning",
     name: "오전권",
     period: "3개월",
-    price: settings.membershipPrices.morning,
+    price: settings?.membershipPrices?.morning || 66000,
     remaining: 0,
     startDate: "2025-10-15",
     endDate: "2026-01-14"
@@ -153,15 +157,15 @@ const getDemoProductsSoldOut = (settings: any) => [
     id: "evening",
     name: "저녁권",
     period: "3개월",
-    price: settings.membershipPrices.evening,
+    price: settings?.membershipPrices?.evening || 33000,
     remaining: 0,
     startDate: "2025-10-15",
     endDate: "2026-01-14"
   }
 ]
 
-// 데모 동의서 (전역 설정 기반으로 필터링됨)
-const getDemoAgreements = (settings: any, companyId: string) => [
+// 데모 동의서 (기본 동의서 사용)
+const getDemoAgreements = (settings: any = null, companyId: string = "B01") => [
   {
     type: "personal" as const,
     title: "개인정보 수집·이용 동의서",
@@ -181,15 +185,32 @@ const getDemoAgreements = (settings: any, companyId: string) => [
     url: "https://aero.fit/legal/utilization-v1.0.html"
   }
 ].filter(agreement => {
+  // 설정이 없으면 모든 동의서 활성화
+  if (!settings?.companyAgreements) return true
+  
   // 전역 설정에서 해당 동의서가 활성화되어 있는지 확인
-  const companyAgreement = settings.companyAgreements.companies[companyId]?.[agreement.type] || 
-                         settings.companyAgreements.default[agreement.type]
-  return companyAgreement.enabled
+  const companyAgreement = settings.companyAgreements.companies?.[companyId]?.[agreement.type] || 
+                         settings.companyAgreements.default?.[agreement.type]
+  return companyAgreement?.enabled ?? true
 })
 
 export default function ComponentsDemoPage() {
   // 기본 설정 사용 (SettingsProvider 의존성 제거)
   const settings = {
+    membershipPrices: {
+      fullDay: 99000,
+      morning: 66000,
+      evening: 33000
+    },
+    lockerPrice: 15000,
+    productStatus: {
+      memberships: {
+        fullDay: true,
+        morning: true,
+        evening: true
+      },
+      locker: true
+    },
     companyAgreements: {
       companies: {},
       default: {
@@ -1517,6 +1538,28 @@ export default function ComponentsDemoPage() {
             </div>
           </div>
 
+          {/* SHP 개인정보처리방침 관리 시스템 데모 */}
+          <div className="space-y-4">
+            <h3 className="text-2xl font-semibold">SHP 개인정보처리방침 관리 시스템</h3>
+            <p className="text-muted-foreground">크롤링된 SHP 개인정보처리방침 데이터를 엑셀 스타일로 관리하는 시스템입니다.</p>
+            
+            <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-4">🏥 SHP 개인정보처리방침 관리 특징</h4>
+              <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+                <li>• <strong>크롤링된 실제 데이터</strong>: SHP 웹사이트에서 크롤링한 개인정보처리방침 정보</li>
+                <li>• <strong>엑셀 스타일 테이블</strong>: 직관적이고 단순한 테이블 형태의 UI</li>
+                <li>• <strong>실시간 편집</strong>: 항목 수정 시 즉시 홈페이지에 반영</li>
+                <li>• <strong>카테고리별 관리</strong>: 개인정보 수집목적, 수집항목, 제3자 제공 등으로 분류</li>
+                <li>• <strong>회사별 설정</strong>: 각 회사별로 활성화/필수 항목 개별 설정</li>
+                <li>• <strong>법적 준수</strong>: 개인정보보호법, 전자서명법 등 관련 법령 준수</li>
+              </ul>
+            </div>
+
+            <div className="border rounded-lg p-4">
+              <ExcelStyleAgreementManager />
+            </div>
+          </div>
+
           {/* 동의서 편집 데모 */}
           <div className="space-y-4">
             <h3 className="text-2xl font-semibold">동의서 편집 데모</h3>
@@ -2428,8 +2471,103 @@ export default function ComponentsDemoPage() {
           </div>
 
           <div>
+            <h2 className="text-2xl font-bold mb-4">결제 내역 테이블 (이용기간 표시)</h2>
+            <PaymentHistoryTable
+              data={[
+                { id: "P001", payment_date: "2025-01-15", company: "한화건설", employee_id: "EMP001", name: "김도윤", gender: "남", membership_type: "종일권", membership_period: 3, has_locker: true, locker_period: 3, locker_number: "A-15", price: 115500, status: "completed", processed: true, memo: "처리완료", toss_payment_key: "test_key_1", toss_order_id: "test_order_1", created_at: "2025-01-15T10:00:00Z", updated_at: "2025-01-15T10:00:00Z" },
+                { id: "P002", payment_date: "2025-01-14", company: "한화건설", employee_id: "EMP002", name: "이영희", gender: "여", membership_type: "오전권", membership_period: 3, has_locker: false, locker_period: 0, price: 99000, status: "completed", processed: true, memo: "처리완료", toss_payment_key: "test_key_2", toss_order_id: "test_order_2", created_at: "2025-01-14T14:30:00Z", updated_at: "2025-01-14T14:30:00Z" },
+                { id: "P003", payment_date: "2025-01-13", company: "한화건설", employee_id: "EMP003", name: "박철수", gender: "남", membership_type: "저녁권", membership_period: 1, has_locker: true, locker_period: 1, locker_number: "B-20", price: 33000, status: "pending", processed: false, memo: "처리대기", toss_payment_key: "test_key_3", toss_order_id: "test_order_3", created_at: "2025-01-13T16:45:00Z", updated_at: "2025-01-13T16:45:00Z" }
+              ]}
+              onToggleProcessed={(id, processed) => console.log(`처리 상태 변경: ${id} -> ${processed}`)}
+              onUpdateLockerNumber={(id, number) => console.log(`사물함 번호 변경: ${id} -> ${number}`)}
+              onUpdateMemo={(id, memo) => console.log(`메모 변경: ${id} -> ${memo}`)}
+            />
+          </div>
+
+          <div>
             <h2 className="text-2xl font-bold mb-4">환경 변수 설정 확인</h2>
             <EnvironmentCheck showDetails={true} />
+          </div>
+
+          {/* 새로운 동의서 컴포넌트 데모 */}
+          <div>
+            <h2 className="text-2xl font-bold mb-4">동의서 컴포넌트 데모</h2>
+            <div className="space-y-6">
+              {/* 개인정보처리방침 모달 데모 */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">개인정보처리방침 모달</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  로그인 페이지 하단에 표시되는 개인정보처리방침 모달입니다.
+                </p>
+                <div className="flex justify-center">
+                  <PrivacyPolicyModal>
+                    <Button variant="outline" size="sm" className="text-sm">
+                      개인정보처리방침
+                    </Button>
+                  </PrivacyPolicyModal>
+                </div>
+              </div>
+
+              {/* 동의서 모달 데모 */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">동의서 모달</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  회원가입 페이지에서 사용되는 동의서 모달입니다.
+                </p>
+                <div className="flex gap-2">
+                  <AgreementModal
+                    title="[필수] 통합-서비스 이용약관"
+                    content={AGREEMENTS.find(a => a.type === 'service')?.content || ''}
+                  >
+                    <Button variant="outline" size="sm">
+                      서비스 이용약관 보기
+                    </Button>
+                  </AgreementModal>
+                  <AgreementModal
+                    title="[필수] 통합-개인정보 수집 및 이용동의"
+                    content={AGREEMENTS.find(a => a.type === 'privacy')?.content || ''}
+                  >
+                    <Button variant="outline" size="sm">
+                      개인정보 수집 및 이용동의 보기
+                    </Button>
+                  </AgreementModal>
+                  <AgreementModal
+                    title="[선택] 통합-마케팅정보수집이용동의"
+                    content={AGREEMENTS.find(a => a.type === 'marketing')?.content || ''}
+                  >
+                    <Button variant="outline" size="sm">
+                      마케팅정보수집이용동의 보기
+                    </Button>
+                  </AgreementModal>
+                </div>
+              </div>
+
+              {/* 동의서 관리 시스템 데모 */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">동의서 관리 시스템</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  관리자가 동의서를 관리할 수 있는 시스템입니다.
+                </p>
+                <div className="border rounded-lg p-4">
+                  <ExcelStyleAgreementManager />
+                </div>
+              </div>
+
+              {/* 약관 동의 컴포넌트 데모 */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">약관 동의 컴포넌트</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  회원가입 시 사용되는 약관 동의 컴포넌트입니다. SHP 스타일을 적용했습니다.
+                </p>
+                <div className="max-w-2xl">
+                  <TermsAgreement 
+                    onAgreementChange={(agreements) => {
+                      console.log('약관 동의 상태:', agreements);
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

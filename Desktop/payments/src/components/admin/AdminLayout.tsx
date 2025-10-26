@@ -47,6 +47,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         }
       } catch (error) {
         console.error('사용자 정보 조회 중 오류:', error)
+        // 인증 오류 시 로그인 페이지로 리다이렉트
+        if (error instanceof Error && error.message.includes('Authentication failed')) {
+          window.location.href = '/login'
+          return
+        }
         setUser(null)
       }
     }

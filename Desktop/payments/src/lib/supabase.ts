@@ -6,23 +6,36 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // 타입 정의
+export interface SettingsData {
+  globalSettings?: Record<string, unknown>
+  localSettings?: Record<string, unknown>
+  [key: string]: unknown
+}
+
+export interface QuotaData {
+  full_day?: number
+  morning?: number
+  evening?: number
+  [key: string]: unknown
+}
+
 export type Database = {
   public: {
     Tables: {
       settings: {
         Row: {
           id: string
-          data: any
+          data: SettingsData
           updated_at: string
         }
         Insert: {
           id?: string
-          data: any
+          data: SettingsData
           updated_at?: string
         }
         Update: {
           id?: string
-          data?: any
+          data?: SettingsData
           updated_at?: string
         }
       }
@@ -31,7 +44,7 @@ export type Database = {
           id: number
           code: string
           name: string
-          quota: any
+          quota: QuotaData
           mode: string
           status: string
           registered: number
@@ -53,7 +66,7 @@ export type Database = {
           id?: number
           code: string
           name: string
-          quota: any
+          quota: QuotaData
           mode: string
           status: string
           registered?: number
@@ -75,7 +88,7 @@ export type Database = {
           id?: number
           code?: string
           name?: string
-          quota?: any
+          quota?: QuotaData
           mode?: string
           status?: string
           registered?: number

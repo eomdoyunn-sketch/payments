@@ -26,7 +26,7 @@ import { findInWhitelist, loadWhitelist, findAllProductsForUser } from "@/lib/wh
 import { runAllGuards } from "@/lib/payment-guards"
 import { createPaymentWidget, requestTossPayment, generateOrderId } from "@/lib/toss-payments"
 import { calculateEndDate, formatDateForDisplay } from "@/lib/utils"
-import { checkPaymentEligibility } from "@/app/actions/payment-eligibility"
+// 결제 자격은 상위에서 계산하여 전달받습니다 (중복 조회 제거)
 import { checkPaymentOverlap } from "@/lib/payment-overlap-check"
 import { toast } from "sonner"
 
@@ -123,61 +123,28 @@ export function PaymentsCard({
     return globalSettings
   }, [globalSettings])
   
-  // 디버깅: PaymentsCard에서 사용하는 설정 로그
+  // 디버깅: PaymentsCard에서 사용하는 설정 로그 (개발 환경에서만)
   React.useEffect(() => {
-    console.log('💳 PaymentsCard 설정:', {
-      hasGlobalSettings: !!globalSettings,
-      globalPrices: globalSettings?.membershipPrices,
-      finalPrices: settings?.membershipPrices
-    })
+    if (process.env.NODE_ENV === 'development') {
+      console.log('💳 PaymentsCard 설정:', {
+        hasGlobalSettings: !!globalSettings,
+        finalPrices: settings?.membershipPrices
+      })
+    }
   }, [globalSettings, settings])
   
-  // 결제 자격 검증 상태
-  const [eligibility, setEligibility] = React.useState<any>(null)
-  const [eligibilityLoading, setEligibilityLoading] = React.useState(true)
+  // 상위에서 전달된 preRegisteredProducts를 활용하므로 별도 자격 재조회는 수행하지 않습니다.
   
-  // 결제 자격 검증 (마운트 시 한번만)
+  // 회사 모드 및 상품 상태 확인 로그 (디버깅용) - 개발 환경에서만
   React.useEffect(() => {
-    const checkEligibility = async () => {
-      setEligibilityLoading(true)
-      try {
-        const result = await checkPaymentEligibility()
-        setEligibility(result)
-        
-        if (!result.eligible) {
-          toast.error(result.reason || '결제 자격이 없습니다.')
-        }
-      } catch (error) {
-        console.error('결제 자격 검증 실패:', error)
-        toast.error('결제 자격을 확인할 수 없습니다.')
-      } finally {
-        setEligibilityLoading(false)
-      }
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🏢 PaymentsCard - 회사 정보:', {
+        name: company.name,
+        mode: company.mode,
+        preRegisteredProducts: user.preRegisteredProducts
+      })
     }
-    checkEligibility()
-  }, [])
-  
-  // 회사 모드 및 상품 상태 확인 로그 (디버깅용)
-  React.useEffect(() => {
-    console.log('🏢 PaymentsCard - 회사 정보:', {
-      name: company.name,
-      code: company.code,
-      mode: company.mode,
-      modeType: typeof company.mode,
-      isWHL: company.mode === "WHL",
-      isFCFS: company.mode === "FCFS",
-      eligibility: eligibility
-    })
-    
-    console.log('🔧 상품 상태 설정:', {
-      productStatus: settings.productStatus,
-      membershipPrices: settings.membershipPrices,
-      fullDay: settings.productStatus.memberships.fullDay,
-      morning: settings.productStatus.memberships.morning,
-      evening: settings.productStatus.memberships.evening,
-      locker: settings.productStatus.locker
-    })
-  }, [company, eligibility, settings])
+  }, [company.name, company.mode, user.preRegisteredProducts])
   
   // 상태 관리
   const [selectedProducts, setSelectedProducts] = React.useState<string[]>(() => {
@@ -235,6 +202,10 @@ export function PaymentsCard({
   const canPay = guardResult.canPass
   const getDisabledReason = () => guardResult.reason
   
+  // 결제위젯 초기화 여부 추적
+  const hasShownToastRef = React.useRef(false)
+  const lastTotalAmountRef = React.useRef<number>(0)
+  
   // 결제위젯 초기화 및 결제 수단 UI 렌더링
   React.useEffect(() => {
     // 상품이 선택되지 않았으면 결제 수단 UI를 렌더링하지 않음
@@ -257,6 +228,10 @@ export function PaymentsCard({
     const lockerPrice = selectedLocker ? settings.lockerPrice : 0
     const totalAmount = productPrice + lockerPrice
     
+    // 금액이 변경되었을 때만 toast 표시 (최초 1회 또는 금액 변경 시)
+    const shouldShowToast = !hasShownToastRef.current || (lastTotalAmountRef.current !== totalAmount)
+    lastTotalAmountRef.current = totalAmount
+    
     // 결제위젯 초기화 및 렌더링
     const initializeWidget = async () => {
       try {
@@ -274,40 +249,49 @@ export function PaymentsCard({
           }
         }
         
-        // 기존 위젯이 있으면 제거
-        if (widgetsRef.current) {
+        // 기존 위젯이 있으면 제거 (금액 변경 시에만)
+        if (widgetsRef.current && shouldShowToast) {
           paymentMethodElement.innerHTML = ''
         }
         
         console.log('🔧 결제위젯 초기화 중...', { customerKey, totalAmount })
         
-        // 결제위젯 생성
-        const widgets = await createPaymentWidget(customerKey)
-        widgetsRef.current = widgets
+        // 기존 위젯이 없거나 금액이 변경되었을 때만 새로 생성
+        if (!widgetsRef.current || shouldShowToast) {
+          // 결제위젯 생성
+          const widgets = await createPaymentWidget(customerKey)
+          widgetsRef.current = widgets
+          console.log('✅ 결제위젯 생성 완료:', widgets)
+        }
         
-        console.log('✅ 결제위젯 생성 완료:', widgets)
-        
-        // 결제 금액 설정
-        await widgets.setAmount({
+        // 결제 금액 설정 (항상 업데이트)
+        await widgetsRef.current.setAmount({
           currency: 'KRW',
           value: totalAmount
         })
         
         console.log('✅ 결제 금액 설정 완료:', totalAmount)
         
-        // 결제 수단 UI 렌더링
-        await widgets.renderPaymentMethods({
-          selector: '#payment-method',
-          variantKey: 'DEFAULT'
-        })
-        
-        setIsPaymentMethodRendered(true)
-        console.log('✅ 결제위젯 렌더링 완료')
-        
-        // 사용자에게 카드 정보 선택 안내
-        toast.info('카드사와 할부 기간을 선택해주세요.', {
-          description: '결제 수단에서 원하는 카드사와 할부 기간을 선택한 후 결제하기 버튼을 눌러주세요.'
-        })
+        // 위젯이 없거나 금액이 변경되었을 때만 UI 렌더링
+        if (!isPaymentMethodRendered || shouldShowToast) {
+          // 결제 수단 UI 렌더링
+          await widgetsRef.current.renderPaymentMethods({
+            selector: '#payment-method',
+            variantKey: 'DEFAULT'
+          })
+          
+          setIsPaymentMethodRendered(true)
+          console.log('✅ 결제위젯 렌더링 완료')
+          
+          // 금액 변경 시에만 toast 표시
+          if (shouldShowToast) {
+            toast.info('카드사와 할부 기간을 선택해주세요.', {
+              description: '결제 수단에서 원하는 카드사와 할부 기간을 선택한 후 결제하기 버튼을 눌러주세요.',
+              duration: 3000 // 3초 후 자동 닫힘
+            })
+            hasShownToastRef.current = true
+          }
+        }
       } catch (error) {
         console.error('❌ 결제위젯 초기화 실패:', error)
         console.error('❌ 에러 상세:', {
@@ -323,8 +307,13 @@ export function PaymentsCard({
     }
     
     // DOM 업데이트 후 위젯 초기화
-    setTimeout(initializeWidget, 100)
-  }, [selectedProducts, selectedLocker, user.id, user.empNo, products, settings, canPay])
+    const timeoutId = setTimeout(initializeWidget, 100)
+    
+    // cleanup 함수: 컴포넌트 언마운트 시 타이머 정리
+    return () => {
+      clearTimeout(timeoutId)
+    }
+  }, [selectedProducts, selectedLocker, user.id, user.empNo, products, settings.membershipPrices, settings.lockerPrice, canPay, isPaymentMethodRendered])
 
   // 계열사 일치 확인
   const isCompanyMatch = user.companyId === company.id
@@ -347,28 +336,22 @@ export function PaymentsCard({
   // 본인확인 필요 여부 (WHL 모드에서만, 그리고 로그인 정보가 명단과 일치하지 않을 때만)
   const needsVerification = company.mode === "WHL" && !verificationStatus?.isValid
 
-  // WHL 모드에서 eligibility 결과를 기반으로 자동 검증 설정
+  // WHL 모드에서 전달된 명단 기반으로 자동 검증/선택 설정
   React.useEffect(() => {
-    if (eligibility?.eligible && company.mode === "WHL" && eligibility.whitelistProducts) {
-      // 추첨 명단에 있는 경우 자동으로 검증 완료 상태로 설정
+    if (company.mode === 'WHL' && user.preRegisteredProducts && user.preRegisteredProducts.length > 0) {
       setVerificationStatus({
         isValid: true,
         message: `${company.name}의 추첨 명단에서 확인되었습니다.`
       })
-      
-      // 첫 번째 가능한 회원권 자동 선택
-      if (selectedProducts.length === 0 && eligibility.whitelistProducts.length > 0) {
+      if (selectedProducts.length === 0) {
         const firstProductId = products.find(p => {
-          const productType = p.name === "종일권" ? "fullDay" : p.name === "오전권" ? "morning" : "evening"
-          return eligibility.whitelistProducts?.includes(productType)
+          const productType = p.name === '종일권' ? 'fullDay' : p.name === '오전권' ? 'morning' : 'evening'
+          return user.preRegisteredProducts?.includes(productType)
         })?.id
-        
-        if (firstProductId) {
-          setSelectedProducts([firstProductId])
-        }
+        if (firstProductId) setSelectedProducts([firstProductId])
       }
     }
-  }, [eligibility, company.mode, company.name, products, selectedProducts.length])
+  }, [company.mode, company.name, products, selectedProducts.length, user.preRegisteredProducts])
 
   // 상태 배지는 제거됨 (사용자에게 배정/등록/잔여/여유 표시 불필요)
 
@@ -605,60 +588,7 @@ export function PaymentsCard({
     )
   }
 
-  // 자격 검증 로딩 중
-  if (eligibilityLoading) {
-    return (
-      <Card className="w-full max-w-2xl">
-        <CardContent className="py-12">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            <p className="text-muted-foreground">결제 자격을 확인하는 중...</p>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  // 자격 없음 (추첨 명단에 없는 경우)
-  if (eligibility && !eligibility.eligible) {
-    return (
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            <XCircleIcon className="w-5 h-5 text-destructive" />
-            결제 자격 없음
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert variant="destructive">
-            <AlertCircleIcon className="w-4 h-4" />
-            <AlertDescription className="space-y-2">
-              <p className="font-medium">{eligibility.reason}</p>
-              {eligibility.userInfo && (
-                <div className="text-sm mt-2 space-y-1">
-                  <p>• 이름: {eligibility.userInfo.name}</p>
-                  <p>• 계열사: {eligibility.userInfo.company_name} ({eligibility.userInfo.company_code})</p>
-                </div>
-              )}
-            </AlertDescription>
-          </Alert>
-          
-          {eligibility.company?.mode === 'WHL' && (
-            <div className="bg-muted p-4 rounded-lg space-y-2">
-              <h3 className="font-medium text-sm">📋 추첨제 안내</h3>
-              <p className="text-sm text-muted-foreground">
-                현재 계열사는 추첨제로 운영되고 있습니다. 
-                추첨 명단에 등록된 분만 결제가 가능합니다.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                자세한 사항은 계열사 담당자에게 문의해주세요.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    )
-  }
+  // 별도의 자격 로딩/검증 화면은 상위에서 처리합니다.
 
   return (
     <Card className="w-full max-w-2xl">
@@ -671,15 +601,15 @@ export function PaymentsCard({
         </div>
         
         {/* 추첨 명단 확인 완료 표시 */}
-        {eligibility?.eligible && company.mode === "WHL" && (
+        {company.mode === 'WHL' && user.preRegisteredProducts && user.preRegisteredProducts.length > 0 && (
           <Alert className="mt-4">
             <CheckIcon className="w-4 h-4 text-green-600" />
             <AlertDescription className="text-sm">
               <span className="font-medium text-green-600">✅ 추첨 명단 확인 완료</span>
               <div className="mt-1 text-muted-foreground">
-                {eligibility.whitelistProducts && eligibility.whitelistProducts.length > 0 && (
+                {user.preRegisteredProducts && user.preRegisteredProducts.length > 0 && (
                   <span>등록 가능한 상품: {
-                    eligibility.whitelistProducts.map((p: string) => 
+                    user.preRegisteredProducts.map((p: string) => 
                       p === 'fullDay' ? '종일권' : p === 'morning' ? '오전권' : '저녁권'
                     ).join(', ')
                   }</span>
@@ -750,7 +680,7 @@ export function PaymentsCard({
               // 선착순 모드: 잔여 수량이 있으면 선택 가능
               // 추첨제 모드: eligibility.whitelistProducts에 등록된 회원권만 선택 가능
               const isInWhitelist = company.mode === "WHL" 
-                ? (eligibility?.whitelistProducts?.includes(productType) ?? false)
+                ? (user.preRegisteredProducts?.includes(productType) ?? false)
                 : false
               
               const isAvailable = isProductActive && (

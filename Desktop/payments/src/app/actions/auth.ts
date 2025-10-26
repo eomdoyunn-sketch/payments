@@ -202,6 +202,31 @@ export async function signup(formData: FormData): Promise<AuthResult> {
       return { error: '회원가입 중 오류가 발생했습니다.' }
     }
 
+    // user_profiles 테이블에 사용자 프로필 생성
+    const { error: profileError } = await supabase
+      .from('user_profiles')
+      .insert({
+        id: authData.user.id,
+        name,
+        email: fullEmail,
+        employee_id: employeeId,
+        company_code: companyCode,
+        company_name: company.name,
+        gender: genderKorean,
+        role: 'user',
+        marketing_agreed: marketingAgreed,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+
+    if (profileError) {
+      console.error('user_profiles 생성 오류:', profileError)
+      // user_profiles 생성 실패 시 오류 반환
+      return { error: '회원가입 중 프로필 생성에 실패했습니다. 고객센터에 문의해주세요.' }
+    } else {
+      console.log('user_profiles 생성 성공')
+    }
+
     // 동의서 정보를 user_agreements 테이블에 저장
     const agreementInserts = [
       {
@@ -248,10 +273,8 @@ export async function signup(formData: FormData): Promise<AuthResult> {
     console.log('회원가입 성공:', authData.user.email)
     revalidatePath('/', 'layout')
     
-    return { 
-      success: true, 
-      message: '회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.' 
-    }
+    // 회원가입 성공 후 홈으로 리다이렉트 (자동 로그인된 상태)
+    redirect('/')
     
   } catch (error) {
     console.error('회원가입 처리 중 오류:', error)

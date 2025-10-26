@@ -12,6 +12,7 @@ import { login } from "@/app/actions/auth";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { PrivacyPolicyModal } from "@/components/PrivacyPolicyModal";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -34,15 +35,15 @@ export default function LoginPage() {
     }
   }, [user, loading]);
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       const result = await login(formData);
-      
       if (result?.error) {
         toast.error(result.error);
       } else if (result?.success && result?.redirectTo) {
         toast.success(result.message || '로그인 성공');
-        // 리다이렉트 처리
         window.location.href = result.redirectTo;
       }
     });
@@ -63,7 +64,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <form action={handleSubmit}>
+          <form onSubmit={handleSubmit}>
             <CardContent className="space-y-5 pt-0 px-0">
               {/* 이메일 입력 */}
               <div className="space-y-2">
@@ -145,6 +146,20 @@ export default function LoginPage() {
             </div>
           </CardFooter>
         </Card>
+        
+        {/* 개인정보처리방침 버튼 */}
+        <div className="flex justify-center mt-6">
+          <PrivacyPolicyModal>
+            <button type="button" className="text-sm font-bold text-foreground hover:text-primary transition-colors cursor-pointer">
+              개인정보처리방침
+            </button>
+          </PrivacyPolicyModal>
+        </div>
+        
+        {/* 저작권 정보 */}
+        <div className="text-center mt-2 text-xs text-muted-foreground">
+          한화호텔앤드리조트(주) 서울특별시 중구 청계천로 86
+        </div>
       </div>
     </div>
   );

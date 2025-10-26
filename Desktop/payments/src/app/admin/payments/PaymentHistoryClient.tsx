@@ -132,7 +132,7 @@ export function PaymentHistoryClient({
   // 처리 상태 토글
   const handleToggleProcessed = async (paymentId: string, processed: boolean) => {
     try {
-      await updatePaymentProcessed(paymentId, processed)
+      await updatePaymentProcessed([paymentId], processed)
       
       setPayments(prev => prev.map(payment => 
         payment.id === paymentId 

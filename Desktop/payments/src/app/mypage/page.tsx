@@ -9,7 +9,22 @@ import { Separator } from "@/components/ui/separator"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { logout } from "@/app/actions/auth"
-import { User, Building2, Mail, Phone, IdCard, Calendar, Shield } from "lucide-react"
+import { formatDateForDisplay, calculateEndDate } from "@/lib/utils"
+import { User, Building2, Mail, Phone, IdCard, Calendar, Shield, FileText, CheckCircle, XCircle } from "lucide-react"
+
+// 동의 유형 레이블 변환 함수
+function getAgreementTypeLabel(type: string): string {
+  switch (type) {
+    case 'service':
+      return '서비스 이용약관'
+    case 'privacy':
+      return '개인정보 수집·이용 동의서'
+    case 'marketing':
+      return '마케팅 정보 수집·이용 동의'
+    default:
+      return '동의서'
+  }
+}
 
 export default function MyPage() {
   const router = useRouter()
@@ -35,6 +50,7 @@ export default function MyPage() {
   } | null>(null)
 
   const [payments, setPayments] = React.useState<any[]>([])
+  const [consents, setConsents] = React.useState<any[]>([])
   const [loading, setLoading] = React.useState(true)
 
   // 사용자 정보 가져오기
@@ -49,13 +65,36 @@ export default function MyPage() {
         }
 
         // user_profiles에서 상세 정보 가져오기
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('id', authUser.id)
           .single()
 
-        if (profileData) {
+        if (profileError || !profileData) {
+          // user_profiles가 없는 경우 기본 정보로 처리
+          const profileFromMetadata = {
+            name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || '사용자',
+            email: authUser.email || '',
+            employee_id: authUser.user_metadata?.employee_id || authUser.id,
+            company_code: authUser.user_metadata?.company_code || 'N/A',
+            company_name: authUser.user_metadata?.company_name || 'N/A',
+            gender: authUser.user_metadata?.gender || null,
+            role: authUser.user_metadata?.role || 'user',
+            marketing_agreed: false,
+            created_at: authUser.created_at
+          }
+          
+          console.log('user_profiles를 찾을 수 없어 user_metadata 사용:', profileFromMetadata)
+          
+          setProfile(profileFromMetadata)
+          setUser({
+            name: profileFromMetadata.name,
+            email: profileFromMetadata.email,
+            companyName: profileFromMetadata.company_name,
+            role: profileFromMetadata.role as "user" | "admin"
+          })
+        } else {
           setProfile({
             ...profileData,
             email: authUser.email || ''
@@ -68,23 +107,50 @@ export default function MyPage() {
           })
 
           // 결제 내역 가져오기 (employee_id로 사용자 식별)
+          const employeeId = profileData.employee_id || authUser.id
           const { data: paymentsData, error: paymentsError } = await supabase
             .from('payments')
             .select('*')
-            .eq('employee_id', profileData.employee_id)
+            .eq('employee_id', employeeId)
             .order('payment_date', { ascending: false })
 
           if (paymentsError) {
-            console.error('결제 내역 조회 실패:', paymentsError)
-            console.error('에러 상세:', {
+            console.warn('결제 내역 조회 실패 (계속 진행):', {
               code: paymentsError.code,
               message: paymentsError.message,
               details: paymentsError.details,
               hint: paymentsError.hint
             })
+            setPayments([]) // 빈 배열로 설정
           } else if (paymentsData) {
             console.log('결제 내역 조회 성공:', paymentsData.length, '건')
-            setPayments(paymentsData)
+            setPayments(paymentsData || [])
+          } else {
+            setPayments([])
+          }
+
+          // 동의 이력 가져오기 (user_agreements 테이블 사용)
+          const { data: consentsData, error: consentsError } = await supabase
+            .from('user_agreements')
+            .select(`
+              *,
+              agreement_templates (
+                title,
+                version,
+                content
+              )
+            `)
+            .eq('user_id', authUser.id)
+            .order('agreed_at', { ascending: false })
+
+          if (consentsError) {
+            console.warn('동의 이력 조회 실패 (계속 진행):', consentsError)
+            setConsents([]) // 빈 배열로 설정
+          } else if (consentsData) {
+            console.log('동의 이력 조회 성공:', consentsData.length, '건')
+            setConsents(consentsData || [])
+          } else {
+            setConsents([])
           }
         }
       } catch (error) {
@@ -254,6 +320,82 @@ export default function MyPage() {
             </CardContent>
           </Card>
 
+          {/* 동의 이력 카드 */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                개인정보 동의 이력
+              </CardTitle>
+              <CardDescription>개인정보 수집 및 이용에 대한 동의 내역입니다</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {consents.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="mb-2">동의 이력이 없습니다.</p>
+                  <p className="text-sm">회원가입 시 동의한 내역이 여기에 표시됩니다.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {consents.map((consent) => (
+                    <div 
+                      key={consent.id} 
+                      className="border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg flex items-center gap-2">
+                            {consent.agreement_templates?.title || getAgreementTypeLabel(consent.agreement_type)}
+                            {consent.agreement_templates?.version && (
+                              <Badge variant="outline" className="text-xs">
+                                v{consent.agreement_templates.version}
+                              </Badge>
+                            )}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            동의일: {consent.agreed_at ? new Date(consent.agreed_at).toLocaleDateString('ko-KR', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : '-'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {consent.agreed ? (
+                            <Badge variant="default" className="flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              동의
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="flex items-center gap-1">
+                              <XCircle className="h-3 w-3" />
+                              미동의
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {consent.agreement_templates?.content && (
+                        <>
+                          <Separator className="my-3" />
+                          <div className="bg-muted/50 p-3 rounded text-sm">
+                            <p className="text-muted-foreground mb-2">동의 전문 내용:</p>
+                            <pre className="whitespace-pre-wrap text-xs max-h-32 overflow-y-auto">
+                              {consent.agreement_templates.content}
+                            </pre>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* 결제 내역 카드 */}
           <Card className="mb-6">
             <CardHeader>
@@ -324,7 +466,7 @@ export default function MyPage() {
                           <p className="font-medium mt-1">
                             {payment.start_date && payment.end_date ? 
                               `${payment.start_date} ~ ${payment.end_date}` : 
-                              '기간 정보 없음'
+                              `${formatDateForDisplay(payment.payment_date)} ~ ${formatDateForDisplay(calculateEndDate(payment.payment_date, payment.membership_period))}`
                             }
                           </p>
                         </div>
@@ -334,18 +476,23 @@ export default function MyPage() {
                             {payment.processed ? '처리완료' : '처리대기'}
                           </p>
                         </div>
+                        {payment.has_locker && (
+                          <div>
+                            <span className="text-muted-foreground">사물함 이용기간</span>
+                            <p className="font-medium mt-1">
+                              {payment.start_date && payment.end_date ? 
+                                `${payment.start_date} ~ ${payment.end_date}` : 
+                                `${formatDateForDisplay(payment.payment_date)} ~ ${formatDateForDisplay(calculateEndDate(payment.payment_date, payment.locker_period))}`
+                              }
+                            </p>
+                          </div>
+                        )}
                         {payment.locker_number && (
                           <div>
                             <span className="text-muted-foreground">사물함 번호</span>
                             <p className="font-medium mt-1">{payment.locker_number}</p>
                           </div>
                         )}
-                        <div>
-                          <span className="text-muted-foreground">처리 상태</span>
-                          <p className="font-medium mt-1">
-                            {payment.processed ? '처리완료' : '처리대기'}
-                          </p>
-                        </div>
                       </div>
                       
                       {payment.memo && (

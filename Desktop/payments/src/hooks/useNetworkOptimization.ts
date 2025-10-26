@@ -9,7 +9,7 @@ import { useState, useCallback, useRef } from 'react'
 export function useNetworkOptimization() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const requestCache = useRef<Map<string, { data: any; timestamp: number }>>(new Map())
+  const requestCache = useRef<Map<string, { data: unknown; timestamp: number }>>(new Map())
   const activeRequests = useRef<Set<string>>(new Set())
 
   // 캐시 유효 시간 (5분)
@@ -27,7 +27,7 @@ export function useNetworkOptimization() {
     return null
   }, [isCacheValid])
 
-  const setCachedData = useCallback((key: string, data: any) => {
+  const setCachedData = useCallback((key: string, data: unknown) => {
     requestCache.current.set(key, {
       data,
       timestamp: Date.now()
@@ -71,41 +71,41 @@ export function useNetworkOptimization() {
     setLoading(true)
     setError(null)
 
-    let lastError: Error | null = null
+    try {
+      let lastError: Error | null = null
 
-    for (let attempt = 0; attempt <= retryCount; attempt++) {
-      try {
-        console.log(`🌐 네트워크 요청: ${key} (시도 ${attempt + 1}/${retryCount + 1})`)
-        
-        const data = await requestFn()
-        
-        // 성공 시 캐시에 저장
-        if (useCache) {
-          setCachedData(key, data)
-        }
-        
-        setLoading(false)
-        return data
+      for (let attempt = 0; attempt <= retryCount; attempt++) {
+        try {
+          console.log(`🌐 네트워크 요청: ${key} (시도 ${attempt + 1}/${retryCount + 1})`)
+          
+          const data = await requestFn()
+          
+          // 성공 시 캐시에 저장
+          if (useCache) {
+            setCachedData(key, data)
+          }
+          
+          setLoading(false)
+          return data
 
-      } catch (error) {
-        lastError = error as Error
-        console.error(`❌ 요청 실패: ${key} (시도 ${attempt + 1})`, error)
-        
-        if (attempt < retryCount) {
-          console.log(`⏳ 재시도 대기: ${retryDelay}ms`)
-          await new Promise(resolve => setTimeout(resolve, retryDelay))
+        } catch (error) {
+          lastError = error as Error
+          console.error(`❌ 요청 실패: ${key} (시도 ${attempt + 1})`, error)
+          
+          if (attempt < retryCount) {
+            console.log(`⏳ 재시도 대기: ${retryDelay}ms`)
+            await new Promise(resolve => setTimeout(resolve, retryDelay))
+          }
         }
       }
+
+      // 모든 재시도 실패
+      setError(lastError?.message || '네트워크 요청에 실패했습니다')
+      setLoading(false)
+      throw lastError
+    } finally {
+      activeRequests.current.delete(key)
     }
-
-    // 모든 재시도 실패
-    setError(lastError?.message || '네트워크 요청에 실패했습니다')
-    setLoading(false)
-    throw lastError
-
-  } finally {
-    activeRequests.current.delete(key)
-  }
   }, [getCachedData, setCachedData])
 
   return {
@@ -133,7 +133,7 @@ export function useOptimizedAPI() {
   }, [optimizedRequest])
 
   // 결제 내역 조회
-  const fetchPayments = useCallback(async (filters?: any) => {
+  const fetchPayments = useCallback(async (filters?: Record<string, unknown>) => {
     const cacheKey = `payments-${JSON.stringify(filters || {})}`
     return optimizedRequest(cacheKey, async () => {
       const params = new URLSearchParams(filters || {})
@@ -176,10 +176,10 @@ export function useOptimizedAPI() {
  * 배치 요청 최적화 훅
  */
 export function useBatchRequests() {
-  const [pendingRequests, setPendingRequests] = useState<Map<string, () => Promise<any>>>(new Map())
+  const [pendingRequests, setPendingRequests] = useState<Map<string, () => Promise<unknown>>>(new Map())
   const [isProcessing, setIsProcessing] = useState(false)
 
-  const addRequest = useCallback((key: string, requestFn: () => Promise<any>) => {
+  const addRequest = useCallback((key: string, requestFn: () => Promise<unknown>) => {
     setPendingRequests(prev => new Map(prev).set(key, requestFn))
   }, [])
 
@@ -193,7 +193,7 @@ export function useBatchRequests() {
       
       // 성공한 요청들만 결과 반환
       const successfulResults = results
-        .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
+        .filter((result): result is PromiseFulfilledResult<unknown> => result.status === 'fulfilled')
         .map(result => result.value)
 
       setPendingRequests(new Map())

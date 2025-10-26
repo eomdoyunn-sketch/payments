@@ -95,6 +95,12 @@ export async function getPaymentsByFilter(filters: {
   }
 }
 
+// UUID 유효성 검증 함수
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidRegex.test(uuid)
+}
+
 // 결제 처리 상태 변경 (단일 또는 다중)
 export async function updatePaymentProcessed(
   paymentIds: string[],
@@ -103,14 +109,27 @@ export async function updatePaymentProcessed(
   try {
     const { supabase } = await checkAuthentication()
 
+    // UUID 유효성 검증
+    const invalidIds = paymentIds.filter(id => !isValidUUID(id))
+    if (invalidIds.length > 0) {
+      console.error('유효하지 않은 UUID:', invalidIds)
+      throw new Error(`유효하지 않은 결제 ID가 포함되어 있습니다: ${invalidIds.join(', ')}`)
+    }
+
     const { error } = await supabase
       .from('payments')
       .update({ processed })
       .in('id', paymentIds)
 
     if (error) {
-      console.error('Error updating payment processed status:', error)
-      throw new Error('결제 처리 상태 변경에 실패했습니다')
+      console.error('결제 처리 상태 변경 실패:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        paymentIds
+      })
+      throw new Error(`결제 처리 상태 변경에 실패했습니다: ${error.message || '알 수 없는 오류'}`)
     }
 
     revalidatePath('/admin')
@@ -125,6 +144,12 @@ export async function updatePaymentProcessed(
 export async function togglePaymentProcessed(paymentId: string) {
   try {
     const { supabase } = await checkAuthentication()
+
+    // UUID 유효성 검증
+    if (!isValidUUID(paymentId)) {
+      console.error('유효하지 않은 UUID:', paymentId)
+      throw new Error(`유효하지 않은 결제 ID입니다: ${paymentId}`)
+    }
 
     // 현재 상태 조회
     const { data: payment } = await supabase
@@ -146,8 +171,14 @@ export async function togglePaymentProcessed(paymentId: string) {
       .single()
 
     if (error) {
-      console.error('Error toggling payment processed status:', error)
-      throw new Error('결제 처리 상태 토글에 실패했습니다')
+      console.error('결제 처리 상태 토글 실패:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        paymentId
+      })
+      throw new Error(`결제 처리 상태 토글에 실패했습니다: ${error.message || '알 수 없는 오류'}`)
     }
 
     revalidatePath('/admin')
@@ -163,6 +194,12 @@ export async function updateLockerNumber(paymentId: string, lockerNumber: string
   try {
     const { supabase } = await checkAuthentication()
 
+    // UUID 유효성 검증
+    if (!isValidUUID(paymentId)) {
+      console.error('유효하지 않은 UUID:', paymentId)
+      throw new Error(`유효하지 않은 결제 ID입니다: ${paymentId}`)
+    }
+
     const { data, error } = await supabase
       .from('payments')
       .update({ locker_number: lockerNumber })
@@ -171,8 +208,14 @@ export async function updateLockerNumber(paymentId: string, lockerNumber: string
       .single()
 
     if (error) {
-      console.error('Error updating locker number:', error)
-      throw new Error('사물함 번호 업데이트에 실패했습니다')
+      console.error('사물함 번호 업데이트 실패:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        paymentId
+      })
+      throw new Error(`사물함 번호 업데이트에 실패했습니다: ${error.message || '알 수 없는 오류'}`)
     }
 
     revalidatePath('/admin')
@@ -187,6 +230,12 @@ export async function updateLockerNumber(paymentId: string, lockerNumber: string
 export async function updatePaymentMemo(paymentId: string, memo: string) {
   try {
     const { supabase } = await checkAuthentication()
+
+    // UUID 유효성 검증
+    if (!isValidUUID(paymentId)) {
+      console.error('유효하지 않은 UUID:', paymentId)
+      throw new Error(`유효하지 않은 결제 ID입니다: ${paymentId}`)
+    }
 
     const { data, error } = await supabase
       .from('payments')
@@ -252,6 +301,12 @@ export async function updatePaymentStatus(
   try {
     const { supabase } = await checkAuthentication()
 
+    // UUID 유효성 검증
+    if (!isValidUUID(paymentId)) {
+      console.error('유효하지 않은 UUID:', paymentId)
+      throw new Error(`유효하지 않은 결제 ID입니다: ${paymentId}`)
+    }
+
     const { data, error } = await supabase
       .from('payments')
       .update({ status })
@@ -276,6 +331,12 @@ export async function updatePaymentStatus(
 export async function deletePayment(paymentId: string) {
   try {
     const { supabase } = await checkAuthentication()
+
+    // UUID 유효성 검증
+    if (!isValidUUID(paymentId)) {
+      console.error('유효하지 않은 UUID:', paymentId)
+      throw new Error(`유효하지 않은 결제 ID입니다: ${paymentId}`)
+    }
 
     // 결제 상태 확인
     const { data: payment } = await supabase

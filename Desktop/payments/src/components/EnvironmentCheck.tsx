@@ -114,3 +114,4 @@ export function EnvironmentCheck({ showDetails = false }: EnvironmentCheckProps)
     </Card>
   )
 }
+

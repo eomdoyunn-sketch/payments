@@ -31,18 +31,29 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. 사용자 프로필 정보 가져오기
-    const { data: profile, error: profileError } = await supabase
+    let profile
+    const { data: profileData, error: profileError } = await supabase
       .from('user_profiles')
       .select('*')
       .eq('id', user.id)
       .single()
 
-    if (profileError || !profile) {
-      console.error('프로필 조회 실패:', profileError)
-      return NextResponse.json(
-        { success: false, error: '사용자 프로필을 찾을 수 없습니다.' },
-        { status: 404 }
-      )
+    // user_profiles가 없는 경우 user_metadata에서 정보 가져오기
+    if (profileError || !profileData) {
+      console.warn('user_profiles가 없습니다. user_metadata 사용:', profileError)
+      
+      // user_profiles가 없으면 user_metadata에서 기본 정보 사용
+      profile = {
+        id: user.id,
+        name: user.user_metadata?.name || user.email?.split('@')[0] || '사용자',
+        employee_id: user.user_metadata?.employee_id || user.id,
+        company_code: user.user_metadata?.company_code || 'N/A',
+        company_name: user.user_metadata?.company_name || 'N/A',
+        gender: user.user_metadata?.gender || '남',
+        role: user.user_metadata?.role || 'user'
+      }
+    } else {
+      profile = profileData
     }
 
     // 3. 토스페이먼츠에 결제 승인 요청
